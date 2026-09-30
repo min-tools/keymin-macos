@@ -201,3 +201,53 @@ struct SkhdLiteralKey: Hashable {
 
     static let keywords = Set(all.map(\.keyword))
 }
+
+/// Apple virtual key codes for keys without a keyword. Labels use the US keyboard layout.
+enum SkhdKeyCodes {
+    /// Letters and digits in Apple's ANSI key-code positions. skhd resolves single characters
+    /// through the active keyboard layout, so this map is only a readable approximation.
+    static let characters: [UInt32: Character] = [
+        0x00: "a", 0x0B: "b", 0x08: "c", 0x02: "d", 0x0E: "e", 0x03: "f", 0x05: "g", 0x04: "h",
+        0x22: "i", 0x26: "j", 0x28: "k", 0x25: "l", 0x2E: "m", 0x2D: "n", 0x1F: "o", 0x23: "p",
+        0x0C: "q", 0x0F: "r", 0x01: "s", 0x11: "t", 0x20: "u", 0x09: "v", 0x0D: "w", 0x07: "x",
+        0x10: "y", 0x06: "z",
+        0x1D: "0", 0x12: "1", 0x13: "2", 0x14: "3", 0x15: "4", 0x17: "5", 0x16: "6", 0x1A: "7",
+        0x1C: "8", 0x19: "9",
+    ]
+
+    /// The reverse of `characters`.
+    static let codes: [Character: UInt32] = Dictionary(
+        uniqueKeysWithValues: characters.map { ($1, $0) }
+    )
+
+    /// Keys without a keyword, which can only be written as key codes: punctuation, the keypad, and
+    /// a few special keys.
+    static let labels: [UInt32: String] = [
+        0x18: "=", 0x1B: "-", 0x1E: "]", 0x21: "[", 0x27: "'", 0x29: ";", 0x2A: "\\", 0x2B: ",",
+        0x2C: "/", 0x2F: ".", 0x32: "`", 0x0A: "§",
+        0x41: "Keypad .", 0x43: "Keypad *", 0x45: "Keypad +", 0x47: "Keypad Clear", 0x4B: "Keypad /",
+        0x4C: "Keypad Enter", 0x4E: "Keypad -", 0x51: "Keypad =", 0x52: "Keypad 0", 0x53: "Keypad 1",
+        0x54: "Keypad 2", 0x55: "Keypad 3", 0x56: "Keypad 4", 0x57: "Keypad 5", 0x58: "Keypad 6",
+        0x59: "Keypad 7", 0x5B: "Keypad 8", 0x5C: "Keypad 9",
+        0x39: "Caps Lock", 0x5D: "¥", 0x5E: "_", 0x5F: "Keypad ,", 0x66: "英数", 0x68: "かな",
+        0x48: "Volume Up", 0x49: "Volume Down", 0x4A: "Mute",
+    ]
+
+    // label(for code): Describe a virtual key using the US layout, a named-key
+    // title, or hexadecimal when the code has no known label.
+    static func label(for code: UInt32) -> String {
+        // Letter and digit codes use their familiar uppercase key-cap labels.
+        if let character = characters[code] { return String(character).uppercased() }
+        // Punctuation and keypad keys have labels even without skhd keywords.
+        if let label = labels[code] { return label }
+        // Named navigation and function keys use the same title as the picker.
+        if let literal = SkhdLiteralKey.byKeyCode[code] { return literal.title }
+        return String(format: "0x%02X", code)
+    }
+
+    // source(for code): Write the `0x` prefix followed by uppercase
+    // hex digits.
+    static func source(for code: UInt32) -> String {
+        String(format: "0x%02X", code)
+    }
+}
