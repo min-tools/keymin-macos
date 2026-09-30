@@ -1,0 +1,34 @@
+.DS_Store
+xcuserdata/
+*.xcuserstate
+__pycache__/
+*.pyc
+
+# Build output, compiler artifacts, and distribution packages stay out of the repository.
+build/
+.build/
+dist/
+DerivedData/
+*-build-*/
+*.app
+*.xcarchive
+*.dSYM
+*.dSYM.zip
+*.dmg
+*.pkg
+*.o
+*.a
+*.dylib
+*.swiftmodule
+*.swiftdoc
+*.swiftsourceinfo
+
+# The maintainer's private directory, signing files, and local configuration are never committed.
+/private/
+.env
+.env.*
+!.env.example
+*.p8
+*.p12
+*.mobileprovision
+*.provisionprofile
