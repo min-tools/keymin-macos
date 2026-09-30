@@ -175,3 +175,35 @@ struct SkhdHotkey: Identifiable, Hashable {
         }
     }
 }
+
+/// `:: name @ : command`
+struct SkhdModeDeclaration: Identifiable, Hashable {
+    var id = UUID()
+    var comment: [String] = []
+    var name: String
+    var capture = false
+    var command: String?
+    var sourceText: String?
+
+    // contentEquals(other): Whether the declaration and its comment match, ignoring identity and
+    // source text.
+    func contentEquals(_ other: SkhdModeDeclaration) -> Bool {
+        comment == other.comment && name == other.name && capture == other.capture && command == other.command
+    }
+}
+
+/// `.load "file"`
+struct SkhdLoadDirective: Identifiable, Hashable {
+    var id = UUID()
+    var comment: [String] = []
+    var path: String
+    var sourceText: String?
+}
+
+/// `.blacklist [ "app" ... ]`
+struct SkhdBlacklist: Identifiable, Hashable {
+    var id = UUID()
+    var comment: [String] = []
+    var processes: [String]
+    var sourceText: String?
+}
