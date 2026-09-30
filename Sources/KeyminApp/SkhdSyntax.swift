@@ -363,3 +363,75 @@ enum SkhdKey: Hashable {
         }
     }
 }
+
+/// Builds the shortcut text used in key caps and comments, such as `⌥⇧A` or `⌃⌥⇧⌘Return`.
+enum SkhdShortcutText {
+    // symbols(modifiers, key): The modifier symbols in canonical order, followed by the key label.
+    static func symbols(modifiers: [SkhdModifier], key: SkhdKey) -> String {
+        SkhdModifier.canonical(modifiers).map(\.symbol).joined() + key.label
+    }
+
+    /// The length of each title separator: a dash between two spaces.
+    static let separatorLength = 3
+
+    /// The separator `SkhdHotkey.setTitle(_:keepPrefix:)` writes after the shortcut prefix.
+    static let keyminSeparator = " — "
+
+    /// Modifier symbols as `symbols(modifiers:key:)` writes them, longest first so `L⌥` is read
+    /// before `⌥`.
+    private static let modifierSymbols = Set(SkhdModifier.allCases.map(\.symbol)).sorted { $0.count > $1.count }
+
+    /// Every key label `SkhdKey.label` can produce, apart from the hex form of unknown codes:
+    /// letters and digits, key titles, and the labels of keys written only as codes.
+    private static let keyLabels: Set<String> = Set(SkhdKeyCodes.characters.values.map { String($0).uppercased() })
+        .union(SkhdLiteralKey.all.map(\.title))
+        .union(SkhdKeyCodes.labels.values)
+
+    // splitTitle(comment): Split a comment such as `⌥⇧A — Focus Safari` into its shortcut prefix
+    // and title, or return nil. Every dash accepts one word of at most 24 characters that holds a
+    // modifier symbol, is a bare function key such as `F5`, or is `fn` followed by a key label.
+    // Keymin's own ` — ` also accepts every prefix Keymin writes: modifier symbols, including
+    // those for hyper and meh, then a key label, as in `◆Up Arrow`, `fnVolume Up`, or a bare
+    // `Return`. A lone `fn`, as in a commented-out `fn - a` binding, and ordinary words such as
+    // `Finder` never count.
+    static func splitTitle(_ comment: String) -> (prefix: String, title: String)? {
+        // Try the dashes in order; the first separator with a plausible prefix wins.
+        for separator in [keyminSeparator, " – ", " - "] {
+            guard let range = comment.range(of: separator) else { continue }
+            let prefix = String(comment[..<range.lowerBound])
+            let title = String(comment[range.upperBound...])
+            let parsed = parsePrefix(prefix)
+            // Keymin's own separator accepts every prefix it writes.
+            if separator == keyminSeparator, parsed != nil { return (prefix, title) }
+            // A bare function key: F followed by one or two digits.
+            let isFunctionKey = (2...3).contains(prefix.count) && prefix.first == "F"
+                && prefix.dropFirst().allSatisfy { $0.isASCII && $0.isNumber }
+            // Otherwise the strict form: a modifier symbol, a function key, or fn with a key.
+            let hasSymbol = prefix.unicodeScalars.contains { "⌃⌥⇧⌘✦◆".unicodeScalars.contains($0) }
+            let hasModifier = parsed.map { !$0.modifiers.isEmpty } ?? false
+            guard !prefix.isEmpty, prefix.count <= 24, !prefix.contains(" "), hasSymbol || hasModifier || isFunctionKey
+            else { continue }
+            return (prefix, title)
+        }
+        return nil
+    }
+
+    // parsePrefix(prefix): Read a prefix as modifier symbols followed by exactly one key label,
+    // the shape `symbols(modifiers:key:)` writes. Returns the modifier symbols and the label, or
+    // nil when the text after the symbols is not a label Keymin writes.
+    private static func parsePrefix(_ prefix: String) -> (modifiers: [String], label: String)? {
+        var rest = Substring(prefix)
+        var modifiers: [String] = []
+        // Take modifier symbols off the front, longest match first.
+        while let symbol = modifierSymbols.first(where: { rest.hasPrefix($0) }) {
+            modifiers.append(symbol)
+            rest = rest.dropFirst(symbol.count)
+        }
+        let label = String(rest)
+        // Unknown codes are labeled `0x` plus uppercase hex digits, as SkhdKeyCodes writes them.
+        let isHexLabel = label.count > 2 && label.hasPrefix("0x")
+            && label.dropFirst(2).allSatisfy { $0.isASCII && ($0.isNumber || ("A"..."F").contains($0)) }
+        guard keyLabels.contains(label) || isHexLabel else { return nil }
+        return (modifiers, label)
+    }
+}
