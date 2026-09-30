@@ -251,3 +251,115 @@ enum SkhdKeyCodes {
         String(format: "0x%02X", code)
     }
 }
+
+/// The key half of a hotkey, kept in the form it was written in so the file keeps its style.
+enum SkhdKey: Hashable {
+    /// A single letter or digit resolved through the active keyboard layout.
+    case character(Character)
+    /// A built-in keyword such as `return` or `f1`.
+    case literal(String)
+    /// An Apple virtual key code such as `0x27`.
+    case code(UInt32)
+
+    // parse(text): Classify key text the way skhd's tokenizer does: one ASCII letter or digit, a
+    // key keyword, or `0x` plus hex digits; nil for anything else. Hex digits in either case are
+    // accepted here, while skhd reads only uppercase.
+    static func parse(_ text: String) -> SkhdKey? {
+        // A single character is stored lowercase, so both spellings mean the same key.
+        if text.count == 1, let character = text.first, character.isASCII, character.isLetter || character.isNumber {
+            return .character(Character(String(character).lowercased()))
+        }
+        // Named keys such as `return`.
+        if SkhdLiteralKey.keywords.contains(text) { return .literal(text) }
+        // A key code needs at least one digit after `0x`.
+        if text.hasPrefix("0x"), let value = UInt32(text.dropFirst(2), radix: 16), text.count > 2 {
+            return .code(value)
+        }
+        return nil
+    }
+
+    /// The text written into the configuration file.
+    var source: String {
+        switch self {
+        case .character(let character): return String(character)
+        case .literal(let keyword): return keyword
+        case .code(let code): return SkhdKeyCodes.source(for: code)
+        }
+    }
+
+    /// A readable name: `A`, `Return`, `'`, or `0x7F` when the code is unknown.
+    var label: String {
+        switch self {
+        case .character(let character): return String(character).uppercased()
+        case .literal(let keyword): return SkhdLiteralKey.byKeyword[keyword]?.title ?? keyword
+        case .code(let code): return SkhdKeyCodes.label(for: code)
+        }
+    }
+
+    /// A compact form for key caps: symbols for named keys, otherwise the label.
+    var capLabel: String {
+        // Keyword keys with a symbol.
+        if case .literal(let keyword) = self, let symbol = SkhdLiteralKey.byKeyword[keyword]?.symbol {
+            return symbol
+        }
+        // Key codes that stand for a keyword with a symbol.
+        if case .code(let code) = self, let literal = SkhdLiteralKey.byKeyCode[code], let symbol = literal.symbol {
+            return symbol
+        }
+        return label
+    }
+
+    /// A virtual key code for comparisons. Character keys use the US layout map;
+    /// the daemon resolves those characters through the user's actual layout.
+    var resolvedKeyCode: UInt32? {
+        switch self {
+        case .character(let character): return SkhdKeyCodes.codes[character]
+        case .literal(let keyword): return SkhdLiteralKey.byKeyword[keyword]?.keyCode
+        case .code(let code): return code
+        }
+    }
+
+    /// Whether skhd adds the `fn` flag on its own. It does so only for arrow, navigation, and
+    /// function keys written by name; the same key written as a key code gets no implicit flag.
+    var hasImplicitFn: Bool {
+        guard case .literal(let keyword) = self else { return false }
+        return SkhdLiteralKey.byKeyword[keyword]?.kind == .navigation
+    }
+
+    /// Whether this is a key code for a key that macOS reports with the `fn` flag, such as an arrow
+    /// or function key. skhd compares flags exactly, so such a binding fires only with an explicit
+    /// `fn` modifier.
+    var needsExplicitFn: Bool {
+        guard case .code(let code) = self else { return false }
+        return SkhdLiteralKey.byKeyCode[code]?.kind == .navigation
+    }
+
+    /// A duplicate-check key, using the US-layout approximation for characters.
+    var identity: String {
+        // Media keys have no key code, so the keyword is the identity.
+        if case .literal(let keyword) = self, SkhdLiteralKey.byKeyword[keyword]?.kind == .media {
+            return "media:" + keyword
+        }
+        // Group spellings with the same resolved code; unknown keys keep their source text.
+        if let code = resolvedKeyCode { return "code:" + String(code) }
+        return "source:" + source
+    }
+
+    /// A physical code for this key, using the US layout for characters.
+    var asKeyCode: SkhdKey? {
+        resolvedKeyCode.map { .code($0) }
+    }
+
+    /// A character or keyword for this code, using the US map for characters.
+    var asKeyword: SkhdKey? {
+        switch self {
+        case .character, .literal: return self
+        case .code(let code):
+            // Prefer the letter or digit, then a keyword.
+            if let character = SkhdKeyCodes.characters[code] { return .character(character) }
+            // Navigation and function codes have named equivalents too.
+            if let literal = SkhdLiteralKey.byKeyCode[code] { return .literal(literal.keyword) }
+            return nil
+        }
+    }
+}
