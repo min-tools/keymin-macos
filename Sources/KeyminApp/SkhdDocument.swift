@@ -207,3 +207,24 @@ struct SkhdBlacklist: Identifiable, Hashable {
     var processes: [String]
     var sourceText: String?
 }
+
+/// Text skhd would reject. It is kept verbatim so nothing is lost when the file is saved.
+struct SkhdRawText: Identifiable, Hashable {
+    var id = UUID()
+    var comment: [String] = []
+    var text: String
+    var error: String
+    var line: Int
+}
+
+/// Comment lines that are not attached to a statement.
+struct SkhdCommentBlock: Identifiable, Hashable {
+    var id = UUID()
+    var lines: [String]
+}
+
+/// A run of empty lines between items.
+struct SkhdBlankLines: Identifiable, Hashable {
+    var id = UUID()
+    var count: Int
+}
