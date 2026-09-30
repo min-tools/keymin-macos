@@ -117,3 +117,87 @@ enum SkhdModifier: String, CaseIterable, Hashable {
         return modifiers.filter { seen.insert($0).inserted }.sorted { $0.sortOrder < $1.sortOrder }
     }
 }
+
+/// A built-in key keyword such as `return`, `f1`, or `sound_up`.
+struct SkhdLiteralKey: Hashable {
+    enum Kind {
+        /// Ordinary keys such as `return` or `space`.
+        case standard
+        /// Keys skhd matches with an implicit `fn` flag: navigation and function keys.
+        case navigation
+        /// Media keys delivered through system-defined events rather than key codes.
+        case media
+    }
+
+    let keyword: String
+    let title: String
+    /// The menu symbol, when the key has one.
+    let symbol: String?
+    /// The Apple virtual key code. Media keys have none; skhd matches them by system event.
+    let keyCode: UInt32?
+    let kind: Kind
+
+    /// Every keyword in the order skhd declares them. Entries after `escape` up to the media keys
+    /// receive the implicit `fn` flag, matching `handle_implicit_literal_flags` in skhd.
+    static let all: [SkhdLiteralKey] = [
+        SkhdLiteralKey(keyword: "return", title: "Return", symbol: "⏎", keyCode: 0x24, kind: .standard),
+        SkhdLiteralKey(keyword: "tab", title: "Tab", symbol: "⇥", keyCode: 0x30, kind: .standard),
+        SkhdLiteralKey(keyword: "space", title: "Space", symbol: "␣", keyCode: 0x31, kind: .standard),
+        SkhdLiteralKey(keyword: "backspace", title: "Delete", symbol: "⌫", keyCode: 0x33, kind: .standard),
+        SkhdLiteralKey(keyword: "escape", title: "Escape", symbol: "⎋", keyCode: 0x35, kind: .standard),
+        SkhdLiteralKey(keyword: "delete", title: "Forward Delete", symbol: "⌦", keyCode: 0x75, kind: .navigation),
+        SkhdLiteralKey(keyword: "home", title: "Home", symbol: "↖", keyCode: 0x73, kind: .navigation),
+        SkhdLiteralKey(keyword: "end", title: "End", symbol: "↘", keyCode: 0x77, kind: .navigation),
+        SkhdLiteralKey(keyword: "pageup", title: "Page Up", symbol: "⇞", keyCode: 0x74, kind: .navigation),
+        SkhdLiteralKey(keyword: "pagedown", title: "Page Down", symbol: "⇟", keyCode: 0x79, kind: .navigation),
+        SkhdLiteralKey(keyword: "insert", title: "Insert", symbol: nil, keyCode: 0x72, kind: .navigation),
+        SkhdLiteralKey(keyword: "left", title: "Left Arrow", symbol: "←", keyCode: 0x7B, kind: .navigation),
+        SkhdLiteralKey(keyword: "right", title: "Right Arrow", symbol: "→", keyCode: 0x7C, kind: .navigation),
+        SkhdLiteralKey(keyword: "up", title: "Up Arrow", symbol: "↑", keyCode: 0x7E, kind: .navigation),
+        SkhdLiteralKey(keyword: "down", title: "Down Arrow", symbol: "↓", keyCode: 0x7D, kind: .navigation),
+        SkhdLiteralKey(keyword: "f1", title: "F1", symbol: nil, keyCode: 0x7A, kind: .navigation),
+        SkhdLiteralKey(keyword: "f2", title: "F2", symbol: nil, keyCode: 0x78, kind: .navigation),
+        SkhdLiteralKey(keyword: "f3", title: "F3", symbol: nil, keyCode: 0x63, kind: .navigation),
+        SkhdLiteralKey(keyword: "f4", title: "F4", symbol: nil, keyCode: 0x76, kind: .navigation),
+        SkhdLiteralKey(keyword: "f5", title: "F5", symbol: nil, keyCode: 0x60, kind: .navigation),
+        SkhdLiteralKey(keyword: "f6", title: "F6", symbol: nil, keyCode: 0x61, kind: .navigation),
+        SkhdLiteralKey(keyword: "f7", title: "F7", symbol: nil, keyCode: 0x62, kind: .navigation),
+        SkhdLiteralKey(keyword: "f8", title: "F8", symbol: nil, keyCode: 0x64, kind: .navigation),
+        SkhdLiteralKey(keyword: "f9", title: "F9", symbol: nil, keyCode: 0x65, kind: .navigation),
+        SkhdLiteralKey(keyword: "f10", title: "F10", symbol: nil, keyCode: 0x6D, kind: .navigation),
+        SkhdLiteralKey(keyword: "f11", title: "F11", symbol: nil, keyCode: 0x67, kind: .navigation),
+        SkhdLiteralKey(keyword: "f12", title: "F12", symbol: nil, keyCode: 0x6F, kind: .navigation),
+        SkhdLiteralKey(keyword: "f13", title: "F13", symbol: nil, keyCode: 0x69, kind: .navigation),
+        SkhdLiteralKey(keyword: "f14", title: "F14", symbol: nil, keyCode: 0x6B, kind: .navigation),
+        SkhdLiteralKey(keyword: "f15", title: "F15", symbol: nil, keyCode: 0x71, kind: .navigation),
+        SkhdLiteralKey(keyword: "f16", title: "F16", symbol: nil, keyCode: 0x6A, kind: .navigation),
+        SkhdLiteralKey(keyword: "f17", title: "F17", symbol: nil, keyCode: 0x40, kind: .navigation),
+        SkhdLiteralKey(keyword: "f18", title: "F18", symbol: nil, keyCode: 0x4F, kind: .navigation),
+        SkhdLiteralKey(keyword: "f19", title: "F19", symbol: nil, keyCode: 0x50, kind: .navigation),
+        SkhdLiteralKey(keyword: "f20", title: "F20", symbol: nil, keyCode: 0x5A, kind: .navigation),
+        SkhdLiteralKey(keyword: "sound_up", title: "Volume Up", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "sound_down", title: "Volume Down", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "mute", title: "Mute", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "play", title: "Play/Pause", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "previous", title: "Previous Track", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "next", title: "Next Track", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "rewind", title: "Rewind", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "fast", title: "Fast Forward", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "brightness_up", title: "Brightness Up", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "brightness_down", title: "Brightness Down", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "illumination_up", title: "Keyboard Backlight Up", symbol: nil, keyCode: nil, kind: .media),
+        SkhdLiteralKey(keyword: "illumination_down", title: "Keyboard Backlight Down", symbol: nil, keyCode: nil, kind: .media),
+    ]
+
+    static let byKeyword: [String: SkhdLiteralKey] = Dictionary(
+        uniqueKeysWithValues: all.map { ($0.keyword, $0) }
+    )
+
+    /// Lookup by key code. Media keys have none, so they are absent here.
+    static let byKeyCode: [UInt32: SkhdLiteralKey] = Dictionary(
+        all.compactMap { literal in literal.keyCode.map { ($0, literal) } },
+        uniquingKeysWith: { first, _ in first }
+    )
+
+    static let keywords = Set(all.map(\.keyword))
+}
