@@ -138,3 +138,55 @@ struct KeyCap: View {
                 .stroke(style == .onAccent ? Color.white.opacity(0.14) : Theme.borderStrong, lineWidth: 1))
     }
 }
+
+/// A physical-looking key cap used to show a binding's shortcut.
+struct PhysicalKeyCap: View {
+    let text: String
+    var size: CGFloat = 13
+    var emphasized = false
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: size * 0.42, style: .continuous)
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: size, weight: .semibold, design: .rounded))
+            .monospacedDigit()
+            .foregroundStyle(emphasized ? Theme.badgeActiveText : Theme.textPrimary)
+            .lineLimit(1)
+            .padding(.horizontal, max(5, size * 0.55))
+            .frame(minWidth: size * 2.1, minHeight: size * 2.0)
+            // A top-lit gradient, a solid edge below, and a soft drop shadow give the cap depth;
+            // the edge stroke is fully opaque in Increase Contrast.
+            .background(
+                LinearGradient(colors: [Theme.keyCapTop, Theme.keyCapBottom], startPoint: .top, endPoint: .bottom),
+                in: shape
+            )
+            .overlay(shape.stroke(Theme.keyCapEdge.opacity(contrast == .increased ? 1 : 0.7), lineWidth: 1))
+            .shadow(color: Theme.keyCapEdge.opacity(0.9), radius: 0, y: 1.5)
+            .shadow(color: Color.black.opacity(0.08), radius: 2, y: 2)
+    }
+}
+
+/// A row of key caps for a shortcut, such as ⌥ ⇧ A.
+struct ShortcutCaps: View {
+    let modifiers: [SkhdModifier]
+    let key: SkhdKey
+    var size: CGFloat = 13
+    var spacing: CGFloat = 5
+
+    var body: some View {
+        // Modifiers appear in canonical order and the key cap is emphasized; VoiceOver reads the
+        // whole shortcut as one element.
+        HStack(spacing: spacing) {
+            ForEach(SkhdModifier.canonical(modifiers), id: \.self) { modifier in
+                PhysicalKeyCap(text: modifier.symbol, size: size)
+            }
+            PhysicalKeyCap(text: key.capLabel, size: size, emphasized: true)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(SkhdShortcutText.symbols(modifiers: modifiers, key: key))
+    }
+}
