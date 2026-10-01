@@ -106,3 +106,35 @@ enum Theme {
         }
     }
 }
+
+// MARK: - Chips, caps, and pills
+
+/// A keyboard-shortcut cap. A standalone cap sits beside a control, such as the search field's
+/// ⌘F; embedded and on-accent caps sit inside buttons.
+struct KeyCap: View {
+    enum Style { case standalone, embedded, onAccent }
+    let text: String
+    var style: Style = .standalone
+
+    // init(text, [style = .standalone]): Allow the cap text as an unlabeled first argument.
+    init(_ text: String, style: Style = .standalone) {
+        self.text = text
+        self.style = style
+    }
+
+    var body: some View {
+        Text(localized(text))
+            .font(Theme.mono(11, weight: .medium))
+            .foregroundStyle(style == .onAccent ? Theme.onAccent.opacity(0.92) : Theme.textSecondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            // On the accent fill the cap is translucent white; an embedded cap sinks into its
+            // button, while a standalone cap rises from the surface.
+            .background(
+                style == .onAccent ? Color.white.opacity(0.16) : style == .embedded ? Theme.surfaceSunken : Theme.surfaceRaised,
+                in: RoundedRectangle(cornerRadius: 5, style: .continuous)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
+                .stroke(style == .onAccent ? Color.white.opacity(0.14) : Theme.borderStrong, lineWidth: 1))
+    }
+}
