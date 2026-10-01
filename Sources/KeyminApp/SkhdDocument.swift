@@ -959,6 +959,398 @@ struct SkhdTokenizer {
     }
 }
 
+// MARK: - Parser
+
+/// Parses a configuration the way skhd does, but keeps going after an error so one bad line does
+/// not hide the rest of the file. Comments and blank lines are preserved as items. Use of an
+/// undeclared mode is not an error here; `SkhdDocument.diagnostics()` reports it.
+struct SkhdParser {
+    /// A syntax error at a token. The parser turns it into a raw item.
+    struct Failure: Error {
+        let token: SkhdToken
+        let message: String
+    }
+
+    private let lines: [String]
+    private var tokenizer: SkhdTokenizer
+    private var current: SkhdToken
+    private var previous: SkhdToken
+    private var declaredModes = Set<String>(["default"])
+
+    // parse(text): Parse the whole text into a document.
+    static func parse(_ text: String) -> SkhdDocument {
+        var parser = SkhdParser(text)
+        return parser.run()
+    }
+
+    // init(text): Normalize line endings, split the text into lines for run() and gapItems(), and
+    // prime the first token. As in skhd, only a line feed ends a line. Carriage returns right
+    // before one, or at the very end of the text, are dropped, as Save drops them, except after a
+    // backslash: skhd lets the backslash escape the carriage return, so the line feed still ends
+    // the command, and the tokenizer reads the pair the same way. Any other carriage return stays
+    // and is read as skhd reads it: as a space between words, or as part of a comment or command.
+    private init(_ text: String) {
+        let normalized = text.replacingOccurrences(of: "(?<!\\\\)\\r+(?=\\n|\\z)", with: "", options: .regularExpression)
+        var split = normalized.components(separatedBy: "\n")
+        // The final newline terminates the last line; it is not an extra blank line.
+        if split.count > 1, split.last == "" { split.removeLast() }
+        lines = split
+        tokenizer = SkhdTokenizer(normalized)
+        current = tokenizer.next()
+        previous = current
+    }
+
+    // run(): Parse statements one at a time. Comment and blank lines between statements become
+    // items, a comment block directly above a statement is attached to it, and a statement that
+    // fails becomes a raw item before parsing resumes on the following line. Statements that share
+    // a line are written from their fields, each on its own line, because none of them can keep
+    // the whole line as its source; when one of them fails, the line becomes one raw item.
+    private mutating func run() -> SkhdDocument {
+        var items: [SkhdItem] = []
+        var consumedLine = 0
+        // The first statement of the latest run of statements on shared lines: its position in
+        // `items`, its first line, and its attached comment. Nil after a raw item.
+        var group: (index: Int, line: Int, comment: [String])?
+
+        while true {
+            let token = current
+            let statementLine = token.kind == .endOfStream ? lines.count + 1 : token.line
+            // Lines between the last statement and this token hold only comments and blank lines.
+            var pending = gapItems(from: consumedLine + 1, to: statementLine - 1)
+            // Trailing comments and blank lines are kept as items.
+            if token.kind == .endOfStream {
+                items.append(contentsOf: pending)
+                break
+            }
+            var attached: [String] = []
+            // A comment block directly above the statement supplies its title and notes.
+            if case .comment(let block)? = pending.last {
+                attached = block.lines
+                pending.removeLast()
+            }
+            items.append(contentsOf: pending)
+            // The statement starts on the line where the previous one ended.
+            let sharesLine = token.line <= consumedLine && group != nil
+
+            do {
+                var item = try statement()
+                item.attach(attached)
+                // A command or string that runs to the end of the file can step past the last
+                // line, so the end is clamped as in the error path below.
+                let endLine = min(max(previous.endLine, token.line), lines.count)
+                if sharesLine, let group {
+                    // Neither statement may write the shared line back, so both are written
+                    // from their fields; later statements on the line never get source text.
+                    items[group.index].setSource(nil)
+                } else {
+                    // Keep the statement's exact lines so an unchanged item is written back
+                    // verbatim, and start a new group with it.
+                    item.setSource(lines[(token.line - 1)...(endLine - 1)].joined(separator: "\n"))
+                    group = (items.count, token.line, attached)
+                }
+                items.append(item)
+                consumedLine = endLine
+            } catch let failure as Failure {
+                // Keep the statement's lines up to the error verbatim and resume on the next line.
+                var startLine = token.line
+                var comment = attached
+                // On a shared line the statements before the failure become part of the raw item,
+                // so the line is written back once, exactly as it was.
+                if sharesLine, let group {
+                    items.removeSubrange(group.index...)
+                    startLine = group.line
+                    comment = group.comment
+                }
+                let endLine = max(failure.token.line, previous.endLine, token.line)
+                let text = lines[(startLine - 1)...(min(endLine, lines.count) - 1)].joined(separator: "\n")
+                items.append(.raw(SkhdRawText(
+                    comment: comment,
+                    text: text,
+                    error: localizedFormat("Line %lld: %@", Int64(failure.token.line), failure.message),
+                    line: failure.token.line
+                )))
+                group = nil
+                consumedLine = endLine
+                tokenizer.reset(toLine: endLine + 1)
+                current = tokenizer.next()
+                previous = current
+            } catch {
+                // Only Failure is thrown; this branch exists for exhaustiveness.
+                break
+            }
+        }
+        return SkhdDocument(items: items)
+    }
+
+    // gapItems(from start, to end): Convert the intervening lines, given as
+    // 1-based line numbers, into items. Any other line would have produced a token, so none occur.
+    private func gapItems(from start: Int, to end: Int) -> [SkhdItem] {
+        var items: [SkhdItem] = []
+        var blankCount = 0
+        var commentLines: [String] = []
+        // flushBlanks(): Emit the pending blank run as one item.
+        func flushBlanks() {
+            // Avoid empty spacing items when the gap contains only comments.
+            if blankCount > 0 { items.append(.blank(SkhdBlankLines(count: blankCount))) }
+            blankCount = 0
+        }
+        // flushComments(): Emit the pending comment lines as one block.
+        func flushComments() {
+            // Blank-only gaps do not create empty comment blocks.
+            if !commentLines.isEmpty { items.append(.comment(SkhdCommentBlock(lines: commentLines))) }
+            commentLines = []
+        }
+        guard start <= end, start >= 1 else { return items }
+        for number in start...min(end, lines.count) {
+            // Trim what the tokenizer skips, vertical tabs and form feeds included, so every line
+            // skhd reads as blank or as a comment is kept as one.
+            let line = lines[number - 1]
+            let trimmed = line.trimmingCharacters(in: SkhdTokenizer.spaces)
+            // A blank line ends the current comment block.
+            if trimmed.isEmpty {
+                flushComments()
+                blankCount += 1
+            } else if trimmed.hasPrefix("#") {
+                // A comment line ends the current blank run. Indentation before `#` is dropped.
+                flushBlanks()
+                commentLines.append(String(trimmed.dropFirst()))
+            }
+        }
+        flushBlanks()
+        flushComments()
+        return items
+    }
+
+    // MARK: Token helpers
+
+    // advance(): Consume the current token; `endOfStream` stays current once reached.
+    private mutating func advance() {
+        previous = current
+        // End-of-stream is stable so repeated lookahead cannot advance past the file.
+        if current.kind != .endOfStream { current = tokenizer.next() }
+    }
+
+    // check(kind): Whether the current token has this kind.
+    private func check(_ kind: SkhdToken.Kind) -> Bool {
+        current.kind == kind
+    }
+
+    // match(kind): Consume the current token when it has this kind.
+    private mutating func match(_ kind: SkhdToken.Kind) -> Bool {
+        guard check(kind) else { return false }
+        advance()
+        return true
+    }
+
+    // fail(message, [at token = nil]): Build a failure at token, or at the current token. An
+    // unknown token that is an invisible space or format character, such as a no-break space or a
+    // byte order mark, gets a message that names its code point, because the editor cannot show it.
+    private func fail(_ message: String, at token: SkhdToken? = nil) -> Failure {
+        let token = token ?? current
+        // Name the invisible character; every other failure keeps the parser's message.
+        if token.kind == .unknown, let scalar = token.text.unicodeScalars.first,
+           scalar.properties.isWhitespace || scalar.properties.generalCategory == .format {
+            let code = String(format: "U+%04X", scalar.value)
+            return Failure(token: token, message: localizedFormat("Unexpected invisible character %@. skhd separates words only with plain spaces, tabs, and line breaks.", code))
+        }
+        return Failure(token: token, message: message)
+    }
+
+    // MARK: Statements
+
+    // statement(): Parse one statement by its first token: a hotkey, a `::` mode declaration, or a
+    // `.` option.
+    private mutating func statement() throws -> SkhdItem {
+        switch current.kind {
+        case .identifier, .modifier, .literal, .keyHex, .key:
+            return .hotkey(try hotkey())
+        case .decl:
+            advance()
+            return .mode(try modeDeclaration())
+        case .option:
+            return try option()
+        default:
+            throw fail(localized("Expected a mode declaration, modifier, or key."))
+        }
+    }
+
+    // hotkey(): Parse `[modes <] [modifiers -] key [->]` followed by a command, a per-app list, or
+    // `; mode`. Mode names are not checked against declarations here; diagnostics report that.
+    private mutating func hotkey() throws -> SkhdHotkey {
+        var modes: [String] = []
+        // An identifier at the start can only be a mode list, which `<` must close.
+        if check(.identifier) {
+            modes = try modeList()
+            guard match(.insert) else { throw fail(localized("Expected “<” after the mode list.")) }
+        }
+        var modifiers: [SkhdModifier] = []
+        // Modifiers must be followed by `-` and then the key.
+        if check(.modifier) {
+            modifiers = try modifierList()
+            guard match(.dash) else { throw fail(localized("Expected “-” between the modifiers and the key.")) }
+        }
+        let key = try keyToken()
+        let passthrough = match(.arrow)
+        let action: SkhdAction
+        // `:` introduces a shell command.
+        if match(.command) {
+            action = .command(previous.text)
+        } else if match(.beginList) {
+            // `[` introduces per-app commands.
+            action = .processMap(try processList())
+        } else if match(.activate) {
+            // `;` names the mode to enter; the text is empty when no identifier followed it.
+            let mode = previous.text
+            guard SkhdTokenizer.isIdentifier(mode) else { throw fail(localized("Expected a mode name after “;”."), at: previous) }
+            action = .activateMode(mode)
+        } else {
+            // Every hotkey needs one of the three actions.
+            throw fail(localized("Expected “:” and a command, “[” and per-app commands, or “;” and a mode."))
+        }
+        return SkhdHotkey(modes: modes, modifiers: modifiers, key: key, passthrough: passthrough, action: action)
+    }
+
+    // modeList(): Parse comma-separated mode names.
+    private mutating func modeList() throws -> [String] {
+        var modes: [String] = []
+        repeat {
+            guard match(.identifier) else { throw fail(localized("Expected a mode name.")) }
+            modes.append(previous.text)
+        } while match(.comma)
+        return modes
+    }
+
+    // modifierList(): Parse modifier keywords joined by `+`.
+    private mutating func modifierList() throws -> [SkhdModifier] {
+        var modifiers: [SkhdModifier] = []
+        repeat {
+            guard match(.modifier), let modifier = SkhdModifier(rawValue: previous.text) else {
+                throw fail(localized("Expected a modifier such as cmd, alt, shift, ctrl, or fn."))
+            }
+            modifiers.append(modifier)
+        } while match(.plus)
+        return modifiers
+    }
+
+    // keyToken(): Parse a single-character key, a `0x` key code, or a key keyword.
+    private mutating func keyToken() throws -> SkhdKey {
+        // A single character; parse() accepts only an ASCII letter or digit.
+        if match(.key) {
+            guard let key = SkhdKey.parse(previous.text) else { throw fail(localized("Expected a key."), at: previous) }
+            return key
+        }
+        // A key code: `0x` and hex digits.
+        if match(.keyHex) {
+            let code = previous
+            // skhd ends a key code at a lowercase hex digit and then rejects the letter after it.
+            if current.line == code.line, current.column == code.column + code.text.count,
+               let next = current.text.first, ("a"..."f").contains(next) {
+                let digits = String(Array(lines[code.line - 1]).dropFirst(code.column + 1).prefix { $0.isASCII && $0.isHexDigit })
+                throw fail(localizedFormat("The key code 0x%@ has lowercase hex digits, which skhd does not read. Write it as 0x%@.", digits, digits.uppercased()), at: code)
+            }
+            // `0x` on its own has no digits.
+            guard previous.text.count > 2, let key = SkhdKey.parse(previous.text) else {
+                throw fail(localized("Expected hex digits after “0x”."), at: previous)
+            }
+            return key
+        }
+        // Keyword keys are kept as written.
+        if match(.literal) {
+            return .literal(previous.text)
+        }
+        throw fail(localized("Expected a key."))
+    }
+
+    // processList(): Parse `"app" : command`, `"app" ~`, `* : command`, and `* ~` entries up to
+    // `]`. At least one named app is required, as in skhd.
+    private mutating func processList() throws -> [SkhdProcessMapping] {
+        var mappings: [SkhdProcessMapping] = []
+        while true {
+            // A named app is bound to a command or unbound with `~`.
+            if match(.string) {
+                let process = previous.text
+                // Bound to a command.
+                if match(.command) {
+                    mappings.append(SkhdProcessMapping(process: process, command: previous.text))
+                } else if match(.unbound) {
+                    // `~` lets the keypress reach this app.
+                    mappings.append(SkhdProcessMapping(process: process, command: nil))
+                } else {
+                    // The name must be followed by one or the other.
+                    throw fail(localized("Expected “:” and a command or “~” after the app name."))
+                }
+            } else if match(.wildcard) {
+                // `*` covers every app not named in the list, bound to a command or unbound.
+                if match(.command) {
+                    mappings.append(SkhdProcessMapping(process: nil, command: previous.text))
+                } else if match(.unbound) {
+                    // Unbound for the other apps.
+                    mappings.append(SkhdProcessMapping(process: nil, command: nil))
+                } else {
+                    // `*` must be bound or unbound too.
+                    throw fail(localized("Expected “:” and a command or “~” after “*”."))
+                }
+            } else if match(.endList) {
+                // The list is complete; skhd rejects one that holds only `*` entries.
+                guard mappings.contains(where: { !$0.isWildcard }) else {
+                    throw fail(localized("Per-app bindings need at least one named app."), at: previous)
+                }
+                return mappings
+            } else {
+                // Anything else is a syntax error.
+                throw fail(localized("Expected an app name in quotes, “*”, or “]”."))
+            }
+        }
+    }
+
+    // modeDeclaration(): Parse `name [@] [: command]` after `::`. A repeated name fails here except
+    // `default`, which skhd lets a file declare after hotkeys used it implicitly; diagnostics flag
+    // a second `:: default`.
+    private mutating func modeDeclaration() throws -> SkhdModeDeclaration {
+        guard match(.identifier) else { throw fail(localized("Expected a mode name after “::”.")) }
+        let name = previous.text
+        let capture = match(.capture)
+        var command: String?
+        // The on-enter command is optional; a declaration can only name the mode.
+        if match(.command) { command = previous.text }
+        // skhd reports a duplicate declaration.
+        if declaredModes.contains(name), name != "default" {
+            throw fail(localizedFormat("Mode “%@” is declared more than once.", name), at: previous)
+        }
+        declaredModes.insert(name)
+        return SkhdModeDeclaration(name: name, capture: capture, command: command)
+    }
+
+    // option(): Parse `.blacklist [ "app" ... ]` or `.load "file"`, the only options skhd knows.
+    private mutating func option() throws -> SkhdItem {
+        let option = current
+        advance()
+        switch option.text {
+        case "blacklist":
+            guard match(.beginList) else { throw fail(localized("Expected “[” and a list of app names after .blacklist."), at: option) }
+            var processes: [String] = []
+            while true {
+                // Collect the quoted app names.
+                if match(.string) {
+                    processes.append(previous.text)
+                } else if match(.endList) {
+                    // The list is complete; skhd rejects an empty one.
+                    guard !processes.isEmpty else { throw fail(localized("The blacklist needs at least one app name."), at: previous) }
+                    return .blacklist(SkhdBlacklist(processes: processes))
+                } else {
+                    // Anything else is a syntax error.
+                    throw fail(localized("Expected an app name in quotes or “]”."))
+                }
+            }
+        case "load":
+            guard match(.string) else { throw fail(localized("Expected a file path in quotes after .load."), at: option) }
+            return .load(SkhdLoadDirective(path: previous.text))
+        default:
+            throw fail(localizedFormat("Unknown option “.%@”.", option.text), at: option)
+        }
+    }
+}
+
 private extension SkhdItem {
     // attach(comment): Store the comment lines parsed above the statement; blank and comment items
     // have none.
