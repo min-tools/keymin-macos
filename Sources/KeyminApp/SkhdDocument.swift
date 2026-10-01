@@ -228,3 +228,72 @@ struct SkhdBlankLines: Identifiable, Hashable {
     var id = UUID()
     var count: Int
 }
+
+/// Everything a configuration file contains, in file order.
+enum SkhdItem: Identifiable, Hashable {
+    case blank(SkhdBlankLines)
+    case comment(SkhdCommentBlock)
+    case hotkey(SkhdHotkey)
+    case mode(SkhdModeDeclaration)
+    case load(SkhdLoadDirective)
+    case blacklist(SkhdBlacklist)
+    case raw(SkhdRawText)
+
+    var id: UUID {
+        switch self {
+        case .blank(let value): return value.id
+        case .comment(let value): return value.id
+        case .hotkey(let value): return value.id
+        case .mode(let value): return value.id
+        case .load(let value): return value.id
+        case .blacklist(let value): return value.id
+        case .raw(let value): return value.id
+        }
+    }
+
+    var hotkey: SkhdHotkey? {
+        // Expose only bindings; configuration directives have separate editors.
+        if case .hotkey(let value) = self { return value }
+        return nil
+    }
+}
+
+/// A problem skhd would report, or a weaker warning the editor noticed.
+struct SkhdDiagnostic: Identifiable, Hashable {
+    enum Severity: Hashable { case error, warning }
+    var id = UUID()
+    var severity: Severity
+    var message: String
+    var itemID: UUID?
+    var line: Int?
+    /// A field the user has not filled in yet. It still blocks saving, but the editor shows it
+    /// as a hint rather than as an error, because nothing is wrong yet.
+    var isIncomplete = false
+}
+
+private extension SkhdItem {
+    // attach(comment): Store the comment lines parsed above the statement; blank and comment items
+    // have none.
+    mutating func attach(_ comment: [String]) {
+        switch self {
+        case .hotkey(var value): value.comment = comment; self = .hotkey(value)
+        case .mode(var value): value.comment = comment; self = .mode(value)
+        case .load(var value): value.comment = comment; self = .load(value)
+        case .blacklist(var value): value.comment = comment; self = .blacklist(value)
+        case .raw(var value): value.comment = comment; self = .raw(value)
+        case .blank, .comment: break
+        }
+    }
+
+    // setSource(text): Keep the statement's exact lines, or nil to write it from its fields; raw
+    // items already hold their text.
+    mutating func setSource(_ text: String?) {
+        switch self {
+        case .hotkey(var value): value.sourceText = text; self = .hotkey(value)
+        case .mode(var value): value.sourceText = text; self = .mode(value)
+        case .load(var value): value.sourceText = text; self = .load(value)
+        case .blacklist(var value): value.sourceText = text; self = .blacklist(value)
+        case .blank, .comment, .raw: break
+        }
+    }
+}
