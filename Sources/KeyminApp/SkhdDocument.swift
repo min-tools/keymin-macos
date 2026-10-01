@@ -675,6 +675,290 @@ struct SkhdDocument: Hashable {
     }
 }
 
+// MARK: - Tokenizer
+
+/// A token in skhd's configuration language. The rules mirror skhd's `tokenize.c`.
+struct SkhdToken {
+    /// Compound tokens carry their text without the introducer: `activate` holds the mode name
+    /// after `;`, `command` the text after `:` up to an unescaped line end, `option` the word after
+    /// `.`, and `string` the text between the quotes. `keyHex` keeps its `0x` prefix.
+    enum Kind {
+        case identifier, activate, command, modifier, literal, keyHex, key
+        case decl, comma, insert, plus, dash, arrow, capture, unbound, wildcard, string, option
+        case beginList, endList, unknown, endOfStream
+    }
+
+    var kind: Kind
+    var text: String
+    var line: Int
+    var column: Int
+    var endLine: Int
+}
+
+/// Splits configuration text into tokens, mirroring skhd's `tokenize.c`. Comments are skipped here;
+/// the parser reads them back from the raw lines.
+struct SkhdTokenizer {
+    private let characters: [Character]
+    private var index = 0
+    private(set) var line = 1
+    private(set) var column = 1
+    private var lineStarts: [Int]
+
+    // init(text): Index the start of every line so the parser can restart the tokenizer after an
+    // error.
+    init(_ text: String) {
+        characters = Array(text)
+        var starts = [0]
+        for (offset, character) in characters.enumerated() where Self.isLineBreak(character) {
+            starts.append(offset + 1)
+        }
+        lineStarts = starts
+    }
+
+    // isSpace(character): Whether skhd skips the character between tokens. Its tokenizer uses C
+    // isspace(), which accepts only space, tab, line feed, vertical tab, form feed, and carriage
+    // return. Swift reads "\r\n" as one character, so that pair counts too. A no-break space, an
+    // ideographic space, or a byte order mark is not skipped and becomes an unknown token.
+    static func isSpace(_ character: Character) -> Bool {
+        character.unicodeScalars.allSatisfy { [0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20].contains($0.value) }
+    }
+
+    /// The characters isSpace(_:) accepts, as a set for trimming lines.
+    static let spaces = CharacterSet(charactersIn: " \t\n\u{0B}\u{0C}\r")
+
+    // isLineBreak(character): Whether the character ends a line: a line feed, or "\r\n", which
+    // Swift reads as one character.
+    private static func isLineBreak(_ character: Character) -> Bool {
+        character == "\n" || character == "\r\n"
+    }
+
+    // isIdentifier(text): Whether the whole text is a mode or option identifier: an ASCII letter,
+    // then letters or underscores, then optional digits, with nothing after them. skhd starts a
+    // word only on a letter, so a leading underscore is rejected.
+    static func isIdentifier(_ text: String) -> Bool {
+        guard let first = text.first, first.isASCII, first.isLetter else { return false }
+        var sawDigit = false
+        for character in text {
+            // Letters may not follow the digit run.
+            if character.isASCII, character.isLetter || character == "_" {
+                // Reject a return to the letter part after digits have begun.
+                if sawDigit { return false }
+            } else if character.isASCII, character.isNumber {
+                // Digits may only end the identifier.
+                sawDigit = true
+            } else {
+                // Anything else, including non-ASCII letters, is rejected.
+                return false
+            }
+        }
+        return true
+    }
+
+    // isModeName(text): Whether skhd reads the text as a mode name: a valid identifier that is
+    // not a single letter, a modifier, or a key name, which its tokenizer reads as keys instead.
+    static func isModeName(_ text: String) -> Bool {
+        isIdentifier(text) && identifierKind(text) == .identifier
+    }
+
+    // endsWithContinuation(command): Whether the command ends with an unescaped backslash, the last
+    // of an odd run. skhd reads that as a line continuation, so the next statement in the file
+    // would become part of the command. An even run ends in an escaped backslash, which is text.
+    static func endsWithContinuation(_ command: String) -> Bool {
+        command.trimmingCharacters(in: .whitespacesAndNewlines).reversed().prefix { $0 == "\\" }.count % 2 == 1
+    }
+
+    // reset(toLine target): Resume at this 1-based line after a parse error. A
+    // line past the last one moves to the end of the text, so the next token is `endOfStream` and
+    // a failed last line without a final newline is never parsed again.
+    mutating func reset(toLine target: Int) {
+        // Past the last line: stop at the end, on the position advance() would have reached.
+        if target > lineStarts.count {
+            index = characters.count
+            line = lineStarts.count
+            column = characters.count - (lineStarts.last ?? 0) + 1
+            return
+        }
+        // Otherwise start the requested line; anything before line 1 means line 1.
+        let lineIndex = max(0, target - 1)
+        index = lineStarts[lineIndex]
+        line = lineIndex + 1
+        column = 1
+    }
+
+    private var current: Character? { index < characters.count ? characters[index] : nil }
+
+    // peekCharacter([offset = 1]): The character this many positions ahead, or nil past the end.
+    private func peekCharacter(_ offset: Int = 1) -> Character? {
+        index + offset < characters.count ? characters[index + offset] : nil
+    }
+
+    // advance(): Consume one character, counting lines and columns the way skhd does.
+    private mutating func advance() {
+        guard index < characters.count else { return }
+        // Start the next line; the increment below makes it column 1.
+        if Self.isLineBreak(characters[index]) {
+            line += 1
+            column = 0
+        }
+        column += 1
+        index += 1
+    }
+
+    // eatWhitespace(): Skip the characters C isspace() accepts, and nothing else, as skhd does.
+    private mutating func eatWhitespace() {
+        while let character = current, Self.isSpace(character) { advance() }
+    }
+
+    // eatComment(): Skip to the end of the line; the line break itself is left for eatWhitespace().
+    private mutating func eatComment() {
+        while let character = current, !Self.isLineBreak(character) { advance() }
+    }
+
+    // eatCommand(): Consume command text to the end of the line. A backslash escapes the next
+    // character, so an escaped line break continues the command on the next line. Before "\r\n",
+    // which Swift reads as one character, the backslash escapes only the carriage return, as in
+    // skhd, so the line feed still ends the command.
+    private mutating func eatCommand() {
+        while let character = current, !Self.isLineBreak(character) {
+            // A backslash takes the next character with it.
+            if character == "\\" {
+                advance()
+                // An escaped carriage return leaves its line feed to end the command.
+                if current == "\r\n" { break }
+            }
+            advance()
+        }
+    }
+
+    // eatHex(): Consume hex digits the way skhd does: ASCII digits and uppercase A to F only, so a
+    // lowercase digit ends the key code early. The parser reports that case.
+    private mutating func eatHex() {
+        while let character = current, character.isASCII, character.isNumber || ("A"..."F").contains(character) {
+            advance()
+        }
+    }
+
+    // eatString(): Consume up to the closing quote. There are no escapes, exactly as in skhd.
+    private mutating func eatString() {
+        while let character = current, character != "\"" { advance() }
+    }
+
+    // eatOption(): Consume the option name up to the next character C isspace() accepts.
+    private mutating func eatOption() {
+        while let character = current, !Self.isSpace(character) { advance() }
+    }
+
+    // isIdentifierCharacter(character): Whether the character can appear in the letter part of an
+    // identifier.
+    private static func isIdentifierCharacter(_ character: Character) -> Bool {
+        character.isASCII && (character.isLetter || character == "_")
+    }
+
+    // eatIdentifier(): Consume letters and underscores, then any trailing digits.
+    private mutating func eatIdentifier() {
+        while let character = current, Self.isIdentifierCharacter(character) { advance() }
+        while let character = current, character.isASCII, character.isNumber { advance() }
+    }
+
+    // text(from start): Return the characters consumed since this array index.
+    private func text(from start: Int) -> String {
+        String(characters[start..<index])
+    }
+
+    // identifierKind(text): Classify a word: a single character is a key, then come modifier and
+    // key keywords, and anything else is a plain identifier such as a mode name.
+    private static func identifierKind(_ text: String) -> SkhdToken.Kind {
+        // Single letters are keys even if they could form identifiers.
+        if text.count == 1 { return .key }
+        // Modifier keywords must enter the modifier-list parser.
+        if SkhdModifier.keywords.contains(text) { return .modifier }
+        // Named keys cannot be used as mode identifiers.
+        if SkhdLiteralKey.keywords.contains(text) { return .literal }
+        return .identifier
+    }
+
+    // next(): Return the next token, skipping whitespace and comments, or `endOfStream` at the end.
+    mutating func next() -> SkhdToken {
+        eatWhitespace()
+        let startLine = line
+        let startColumn = column
+        guard let character = current else {
+            return SkhdToken(kind: .endOfStream, text: "", line: startLine, column: startColumn, endLine: startLine)
+        }
+        var start = index
+        advance()
+        var kind: SkhdToken.Kind
+        // Single-character tokens keep their text; compound ones move `start` past the introducer.
+        switch character {
+        case "+": kind = .plus
+        case ",": kind = .comma
+        case "<": kind = .insert
+        case "@": kind = .capture
+        case "~": kind = .unbound
+        case "*": kind = .wildcard
+        case "[": kind = .beginList
+        case "]": kind = .endList
+        case ".":
+            start = index
+            eatOption()
+            kind = .option
+        case "\"":
+            start = index
+            eatString()
+            let token = SkhdToken(kind: .string, text: text(from: start), line: startLine, column: startColumn, endLine: line)
+            advance()
+            return token
+        case "#":
+            eatComment()
+            return next()
+        case "-":
+            // `->` marks passthrough.
+            if current == ">" {
+                advance()
+                kind = .arrow
+            } else {
+                // A lone dash separates the modifiers from the key.
+                kind = .dash
+            }
+        case ";":
+            eatWhitespace()
+            start = index
+            eatIdentifier()
+            kind = .activate
+        case ":":
+            // `::` starts a mode declaration.
+            if current == ":" {
+                advance()
+                kind = .decl
+            } else {
+                // A single colon starts a command that runs to the end of the line.
+                eatWhitespace()
+                start = index
+                eatCommand()
+                kind = .command
+            }
+        default:
+            // `0x` starts a key code; the prefix stays in the text.
+            if character == "0", current == "x" {
+                advance()
+                eatHex()
+                kind = .keyHex
+            } else if character.isASCII, character.isNumber {
+                // A digit on its own is a key.
+                kind = .key
+            } else if character.isASCII, character.isLetter {
+                // A word starts on a letter, as in skhd, and is a key, a keyword, or an identifier.
+                eatIdentifier()
+                kind = Self.identifierKind(text(from: start))
+            } else {
+                // Anything else is left for the parser to report.
+                kind = .unknown
+            }
+        }
+        return SkhdToken(kind: kind, text: text(from: start), line: startLine, column: startColumn, endLine: line)
+    }
+}
+
 private extension SkhdItem {
     // attach(comment): Store the comment lines parsed above the statement; blank and comment items
     // have none.
