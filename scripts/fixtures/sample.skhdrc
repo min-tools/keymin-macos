@@ -1,0 +1,77 @@
+# Keymin test fixture covering bindings, modes, directives, and command formats.
+# Reload after manual edits with: skhd --reload
+
+# Resize mode captures keys and runs a command when entered.
+:: resize @ : echo "resize mode"
+:: launcher : echo "launcher"
+:: default : echo "back to default"
+
+# Let these apps receive their keys without skhd handling them.
+.blacklist [
+    "kitty"
+    "Terminal"
+]
+
+.load "partial_skhdrc"
+
+# ⌥⇧' — Focus Passwords
+alt + shift - 0x27 : /usr/bin/open -b com.apple.Passwords
+
+# ⌥⇧A — Focus Safari
+alt + shift - 0x00 : /usr/bin/open -b com.apple.Safari
+
+# ⌥⇧B — Focus UTM; pass through when UTM is active.
+alt + shift - 0x0B [
+    "UTM" ~
+    * : /usr/bin/open -b com.utmapp.UTM
+]
+
+# ⌥⇧F — Focus Firefox Developer Edition
+alt + shift - f : /usr/bin/open -b org.mozilla.firefoxdeveloperedition
+
+# Redirect browser keys
+cmd - d [
+    "Google Chrome"             : /opt/homebrew/bin/skhd -k "cmd - l"
+    "Safari"                    : /opt/homebrew/bin/skhd -k "cmd - l"
+    *                           ~
+]
+
+# Terminal line editing
+cmd - left [
+    "Terminal" : /opt/homebrew/bin/skhd -k "ctrl - a"
+    *          ~
+]
+shift - f3 [
+    "Google Chrome"              : /opt/homebrew/bin/skhd -k "shift + cmd - g"
+    *                             ~
+]
+
+# F1 — Focus Terminal
+f1 : /usr/bin/open -b com.apple.Terminal
+
+# Passthrough binding that also reaches the app
+ctrl + alt + shift - 0x12 -> : echo "passthrough"
+
+# Multi-line command
+hyper - m : echo "first" ; \
+    echo "second" ; \
+    echo "third"
+
+# Enter resize mode from the default mode.
+cmd - x ; resize
+
+# Return to the default mode from resize mode.
+resize < escape ; default
+resize, launcher < cmd - return : open -na /Applications/Terminal.app
+launcher < cmd + shift - return -> ; default
+
+# Configurable tools
+shift + cmd - 2 : "$HOME/.local/bin/widget-youtube-prompt"
+
+# Media keys and other literals
+fn - sound_up : echo "volume"
+play : echo "play"
+lcmd + ralt - space : echo "sides"
+meh - 0x7E : echo "meh up"
+
+#ctrl + alt - c : "$HOME/.local/bin/spotlight-clipboard"
