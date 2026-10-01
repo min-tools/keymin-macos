@@ -1377,3 +1377,259 @@ private extension SkhdItem {
         }
     }
 }
+
+// MARK: - Serializer
+
+/// Writes a document back in skhd syntax. Unchanged statements keep their original text.
+enum SkhdSerializer {
+    // serialize(document): Write the items in order, restoring `#` on comment lines, and end the
+    // file with exactly one newline.
+    static func serialize(_ document: SkhdDocument) -> String {
+        var lines: [String] = []
+        for item in document.items {
+            switch item {
+            case .blank(let blank):
+                lines.append(contentsOf: Array(repeating: "", count: blank.count))
+            case .comment(let block):
+                lines.append(contentsOf: block.lines.map { "#" + $0 })
+            case .hotkey(let hotkey):
+                lines.append(contentsOf: hotkey.comment.map { "#" + $0 })
+                lines.append(hotkey.sourceText ?? hotkeyText(hotkey))
+            case .mode(let mode):
+                lines.append(contentsOf: mode.comment.map { "#" + $0 })
+                lines.append(mode.sourceText ?? modeText(mode))
+            case .load(let load):
+                lines.append(contentsOf: load.comment.map { "#" + $0 })
+                lines.append(load.sourceText ?? ".load \"\(load.path)\"")
+            case .blacklist(let list):
+                lines.append(contentsOf: list.comment.map { "#" + $0 })
+                lines.append(list.sourceText ?? blacklistText(list))
+            case .raw(let raw):
+                lines.append(contentsOf: raw.comment.map { "#" + $0 })
+                lines.append(raw.text)
+            }
+        }
+        // Collapse trailing blank lines and end with one newline.
+        var text = lines.joined(separator: "\n")
+        while text.hasSuffix("\n\n") { text.removeLast() }
+        // Supply a line terminator even for a newly created empty document.
+        if !text.hasSuffix("\n") { text += "\n" }
+        return text
+    }
+
+    // keysymText(hotkey): Join modes, modifiers, the key, and the passthrough arrow into the
+    // statement head, such as `alt + shift - a`.
+    static func keysymText(_ hotkey: SkhdHotkey) -> String {
+        var head = ""
+        // An empty mode list uses skhd's implicit default mode.
+        if !hotkey.modes.isEmpty { head += hotkey.modes.joined(separator: ", ") + " < " }
+        // Bare keys omit both the modifier list and its separating dash.
+        if !hotkey.modifiers.isEmpty { head += hotkey.modifiers.map(\.rawValue).joined(separator: " + ") + " - " }
+        head += hotkey.key.source
+        // Preserve delivery to the foreground app when passthrough is selected.
+        if hotkey.passthrough { head += " ->" }
+        return head
+    }
+
+    // hotkeyText(hotkey): Write a whole binding. Per-app lists take one entry per line, with the
+    // names padded so the commands line up.
+    static func hotkeyText(_ hotkey: SkhdHotkey) -> String {
+        let head = keysymText(hotkey)
+        switch hotkey.action {
+        case .command(let command):
+            return head + " : " + commandText(command)
+        case .activateMode(let mode):
+            return head + " ; " + mode
+        case .processMap(let mappings):
+            let names = mappings.map { $0.process.map { "\"\($0)\"" } ?? "*" }
+            let width = names.map(\.count).max() ?? 0
+            var lines = [head + " ["]
+            for (mapping, name) in zip(mappings, names) {
+                let padded = name.padding(toLength: width, withPad: " ", startingAt: 0)
+                // Bound entries get their command.
+                if let command = mapping.command {
+                    lines.append("    \(padded) : \(commandText(command))")
+                } else {
+                    // Unbound entries end with `~`.
+                    lines.append("    \(padded) ~")
+                }
+            }
+            lines.append("]")
+            return lines.joined(separator: "\n")
+        }
+    }
+
+    // modeText(mode): Write `:: name`, then `@` when the mode captures keys, then any command.
+    static func modeText(_ mode: SkhdModeDeclaration) -> String {
+        var text = ":: " + mode.name
+        // Capture modes suppress otherwise unbound keypresses.
+        if mode.capture { text += " @" }
+        // A blank command is left out: skhd would read the next line as the command after `:`.
+        if let command = mode.command, !command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            text += " : " + commandText(command)
+        }
+        return text
+    }
+
+    // blacklistText(list): Write `.blacklist [`, one quoted app per line, and `]` on its own line.
+    // `\u{2E}` is the dot.
+    static func blacklistText(_ list: SkhdBlacklist) -> String {
+        (["\u{2E}blacklist ["] + list.processes.map { "    \"\($0)\"" } + ["]"]).joined(separator: "\n")
+    }
+
+    // commandText(command): Write a command as one logical statement. Surrounding spaces and line
+    // breaks are trimmed first, so a Return at the end of the field cannot leave a backslash that
+    // joins the next statement. skhd hands an escaped line break to the shell as a continuation,
+    // so each inner line break the user typed becomes ` ; \` plus the break, and the lines run as
+    // separate commands, as the shell runs the typed lines. Where a `;` would be wrong, a line
+    // only continues with ` \`: after an unescaped `;`, `&`, or `|` (which covers `&&` and `||`),
+    // before a line that starts with one, and after a word the next line completes, such as
+    // `then`, `do`, or `{` (see continuesCompound(_:)). A line ending in an unescaped backslash
+    // already continues and is kept as typed. Blank lines are dropped so no empty command
+    // appears; one right after a continued line ends that line's command, as in the shell, so
+    // the continuing backslash goes with it. The output is a fixed point: writing it again
+    // changes nothing.
+    static func commandText(_ command: String) -> String {
+        let trimmed = command.replacingOccurrences(of: "\r\n", with: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        var lines: [String] = []
+        for line in trimmed.components(separatedBy: "\n") {
+            // A blank line is dropped.
+            if line.trimmingCharacters(in: .whitespaces).isEmpty {
+                // It ends the command of a line that continued into it, so that backslash goes.
+                if let last = lines.last, trailingBackslashes(last) % 2 == 1 { lines[lines.count - 1].removeLast() }
+                continue
+            }
+            lines.append(line)
+        }
+        // A single line needs no separators.
+        guard lines.count > 1 else { return trimmed }
+        var result = ""
+        for index in lines.indices.dropLast() {
+            // Trailing spaces would sit between a backslash and the line break and stop it from
+            // escaping the break, so they go.
+            var text = lines[index]
+            while text.last == " " || text.last == "\t" { text.removeLast() }
+            // A backslash that escapes the first of them makes that space part of the command, so
+            // the line keeps them all.
+            if text.count < lines[index].count, trailingBackslashes(text) % 2 == 1 { text = lines[index] }
+            // Operators at the end of this line or the start of the next one join the two.
+            let endsWithOperator = text.last.map { ";&|".contains($0) } == true && trailingBackslashes(String(text.dropLast())) % 2 == 0
+            let nextStartsWithOperator = lines[index + 1].first { $0 != " " && $0 != "\t" }.map { ";&|".contains($0) } == true
+            if trailingBackslashes(text) % 2 == 1 {
+                // An odd run of backslashes ends in an unescaped one: the line already continues.
+                result += text + "\n"
+            } else if endsWithOperator || nextStartsWithOperator || continuesCompound(text) {
+                // The command goes on in the next line; a separator here would break it.
+                result += text + " \\\n"
+            } else {
+                // Any other line ends its command.
+                result += text + " ; \\\n"
+            }
+        }
+        return result + lines[lines.count - 1]
+    }
+
+    /// Shell keywords that a command must follow, so a line ending in one cannot end a command.
+    private static let commandOpeners: Set<String> = ["if", "then", "do", "else", "elif", "while", "until", "!", "{", "("]
+
+    // continuesCompound(line): Whether the line stops where the shell needs more of the same
+    // command, so a `;` after it would be a syntax error: an open `$(`, a keyword such as `then`,
+    // `do`, `else`, or `{` where a command starts, `in` after for, select, or case and a name, or
+    // a `{` that opens a function's body. A keyword used as a plain word, as in `echo what to do`,
+    // does not count.
+    private static func continuesCompound(_ line: String) -> Bool {
+        // An open command substitution goes on in the next line.
+        if line.hasSuffix("$(") { return true }
+        // Split into words at spaces and tabs; `;`, `&`, and `|` are words of their own.
+        var words: [String] = []
+        var word = ""
+        // endWord(): Add the current word, when there is one, and start the next.
+        func endWord() {
+            words += word.isEmpty ? [] : [word]
+            word = ""
+        }
+        for character in line {
+            // Spaces only end the current word.
+            if character == " " || character == "\t" {
+                endWord()
+            } else if ";&|".contains(character) {
+                // An operator ends the current word and stands alone.
+                endWord()
+                words.append(String(character))
+            } else {
+                // Anything else belongs to the current word.
+                word.append(character)
+            }
+        }
+        endWord()
+        guard let last = words.last else { return false }
+        let index = words.count - 1
+        // startsCommand(position): Whether the shell reads the word there as the start of a
+        // command, the only place it sees keywords: first, after an operator, or after a keyword.
+        func startsCommand(_ position: Int) -> Bool {
+            position == 0 || [";", "&", "|"].contains(words[position - 1]) || commandOpeners.contains(words[position - 1])
+        }
+        // `in` is a keyword only as the third word of for, select, or case.
+        if last == "in" {
+            return index >= 2 && ["for", "select", "case"].contains(words[index - 2]) && startsCommand(index - 2)
+        }
+        // `{` after `name()` or `function name` opens the function's body.
+        if last == "{", index > 0, words[index - 1].hasSuffix("()") || (index == 2 && words[0] == "function") {
+            return true
+        }
+        return commandOpeners.contains(last) && startsCommand(index)
+    }
+
+    // breaksQuotedText(command): Whether commandText(_:) would put a separator inside text the
+    // shell reads as quoted: a line break inside single or double quotes, or a here-document
+    // spread over lines. skhd cannot keep such a line break, so the written text changes there.
+    static func breaksQuotedText(_ command: String) -> Bool {
+        let characters = Array(command.replacingOccurrences(of: "\r\n", with: "\n").trimmingCharacters(in: .whitespacesAndNewlines))
+        // A single line has no line break to change.
+        guard characters.contains("\n") else { return false }
+        var quote: Character?
+        var escaped = false
+        var inComment = false
+        for (index, character) in characters.enumerated() {
+            let before: Character = index > 0 ? characters[index - 1] : " "
+            if inComment {
+                // A comment runs to the end of its line; quotes inside it do not count.
+                if character == "\n" { inComment = false }
+            } else if escaped {
+                // The escaped character, a line break included, is taken as it is.
+                escaped = false
+            } else if quote == "'" {
+                // Single quotes have no escapes; the next single quote closes them.
+                if character == "'" { quote = nil } else if character == "\n" {
+                    // A newline before closure would change the quoted value on save.
+                    return true
+                }
+            } else if character == "\\" {
+                // Outside single quotes a backslash escapes the next character.
+                escaped = true
+            } else if quote == "\"" {
+                // The earlier escape branch leaves only unescaped closing quotes here.
+                if character == "\"" { quote = nil } else if character == "\n" {
+                    // A newline inside the quotes cannot survive command serialization.
+                    return true
+                }
+            } else if character == "'" || character == "\"" {
+                // A quote opens.
+                quote = character
+            } else if character == "#", before.isWhitespace || ";&|(".contains(before) {
+                // A `#` that starts a word starts a comment.
+                inComment = true
+            } else if character == "<", before == "<", index < 2 || characters[index - 2] != "<",
+                      index + 1 >= characters.count || characters[index + 1] != "<" {
+                // `<<`, but not `<<<`, starts a here-document, whose body is on the next lines.
+                return true
+            }
+        }
+        return false
+    }
+
+    // trailingBackslashes(text): The number of backslashes at the end of the text.
+    private static func trailingBackslashes(_ text: String) -> Int {
+        text.reversed().prefix { $0 == "\\" }.count
+    }
+}
