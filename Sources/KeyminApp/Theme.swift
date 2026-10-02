@@ -591,3 +591,32 @@ struct SwitchControl: View {
         .accessibilityValue(localized(isOn ? "On" : "Off"))
     }
 }
+
+/// A switch inside a card with a title and one line of explanation.
+struct ToggleCard: View {
+    let title: String
+    let subtitle: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        // The whole card is the button, so clicking the text toggles the switch as well.
+        Button { isOn.toggle() } label: {
+            HStack(spacing: 16) {
+                SwitchControl(isOn: $isOn)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(localized(title)).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.textPrimary)
+                    Text(localized(subtitle)).font(.system(size: 12.5)).foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.bare)
+        .keyboardFocusable()
+        .card()
+    }
+}
