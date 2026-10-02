@@ -508,3 +508,26 @@ private struct HoverHighlight: ViewModifier {
             .onHover { hovering = $0 }
     }
 }
+
+/// A tinted symbol tile used for page headers, sidebar rows, and empty states.
+struct IconTile: View {
+    let symbol: String
+    var size: CGFloat = 56
+    var tint: Color = Theme.accent
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
+        // Symbol size, corner radius, and padding all scale with the tile; the stroke is stronger
+        // in Increase Contrast so the tile keeps an edge.
+        Image(systemName: symbol)
+            .font(.system(size: size * 0.44, weight: .semibold))
+            .foregroundStyle(tint)
+            .frame(width: size, height: size)
+            .background(tint.opacity(0.12), in: shape)
+            .overlay(shape.stroke(
+                tint.opacity(contrast == .increased ? 0.42 : 0.12),
+                lineWidth: contrast == .increased ? 1.5 : 1
+            ))
+    }
+}
