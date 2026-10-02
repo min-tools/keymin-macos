@@ -452,3 +452,17 @@ struct StatusPill: View {
         .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.borderStrong, lineWidth: 1))
     }
 }
+
+/// Uppercase, tracked labels that head a group of controls or a card.
+struct SectionLabel: View {
+    let text: String
+    // init(text): Allow the label text as an unlabeled argument.
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(localized(text).uppercased())
+            .font(.system(size: 11, weight: .semibold))
+            .tracking(1.1)
+            .foregroundStyle(Theme.labelText)
+    }
+}
