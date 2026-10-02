@@ -659,3 +659,59 @@ struct SegmentedControl: View {
         .animation(.easeOut(duration: 0.15), value: selection)
     }
 }
+
+/// A checkbox in the accent color, drawn by `CheckRow`.
+struct CheckMark: View {
+    let checked: Bool
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    var body: some View {
+        ZStack {
+            // Keep empty boxes distinct from the surrounding surface in both appearances.
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(checked ? AnyShapeStyle(Theme.accentGradient) : AnyShapeStyle(Theme.inputBackground))
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(checked ? Theme.accentDeep : Theme.checkboxBorder,
+                        lineWidth: checked ? 1 : contrast == .increased ? 2 : 1.5)
+            // The tick only exists while checked, so it animates in and out with the fill.
+            if checked {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Theme.onAccent)
+            }
+        }
+        .frame(width: 20, height: 20)
+        .animation(.easeOut(duration: 0.12), value: checked)
+    }
+}
+
+/// A labeled checkbox row.
+struct CheckRow: View {
+    let title: String
+    var subtitle: String? = nil
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button { isOn.toggle() } label: {
+            HStack(alignment: .top, spacing: 10) {
+                CheckMark(checked: isOn)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localized(title))
+                        .font(.system(size: 13.5, weight: .medium))
+                        .foregroundStyle(Theme.textPrimary)
+                    // The optional subtitle wraps under the title.
+                    if let subtitle {
+                        Text(localized(subtitle))
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.bare)
+        .keyboardFocusable()
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+}
