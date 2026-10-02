@@ -495,3 +495,16 @@ extension View {
         modifier(HoverHighlight(cornerRadius: cornerRadius))
     }
 }
+
+/// Fades a faint fill in behind the content while the pointer is over it.
+private struct HoverHighlight: ViewModifier {
+    let cornerRadius: CGFloat
+    @State private var hovering = false
+
+    // body(content): Draw the hover fill behind the content and track the pointer.
+    func body(content: Content) -> some View {
+        content
+            .background(Theme.textPrimary.opacity(hovering ? 0.055 : 0), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .onHover { hovering = $0 }
+    }
+}
