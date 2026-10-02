@@ -466,3 +466,32 @@ struct SectionLabel: View {
             .foregroundStyle(Theme.labelText)
     }
 }
+
+// MARK: - Surfaces
+
+/// Card chrome: padding, a plain or sunken surface, and a hairline border.
+struct CardModifier: ViewModifier {
+    var padding: CGFloat
+    var sunken: Bool
+
+    // body(content): Pad the content, then draw the card surface and border behind it.
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(sunken ? Theme.surfaceSunken : Theme.surface, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous).stroke(Theme.border, lineWidth: 1))
+    }
+}
+
+extension View {
+    // card([padding = 0], [sunken = false]): Wrap the view in card chrome; a sunken card uses the
+    // text background for inset areas.
+    func card(padding: CGFloat = 0, sunken: Bool = false) -> some View {
+        modifier(CardModifier(padding: padding, sunken: sunken))
+    }
+
+    // hoverHighlight([cornerRadius = 8]): Row hover highlight for lists and tables.
+    func hoverHighlight(cornerRadius: CGFloat = 8) -> some View {
+        modifier(HoverHighlight(cornerRadius: cornerRadius))
+    }
+}
