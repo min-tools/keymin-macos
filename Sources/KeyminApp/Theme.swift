@@ -715,3 +715,42 @@ struct CheckRow: View {
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
+
+/// A toggle chip used for modifier keys and modes.
+struct ToggleChip: View {
+    let text: String
+    let isOn: Bool
+    var help: String? = nil
+    let action: () -> Void
+    @Environment(\.colorSchemeContrast) private var contrast
+    @State private var hovering = false
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 9, style: .continuous) }
+
+    var body: some View {
+        Button(action: action) {
+            Text(text)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(isOn ? Theme.onAccent : Theme.textPrimary)
+                .padding(.horizontal, 12)
+                .frame(height: Theme.smallControlHeight + 2)
+                .background(
+                    isOn ? AnyShapeStyle(Theme.accentGradient)
+                        : AnyShapeStyle(hovering ? Theme.textPrimary.opacity(0.08) : Theme.surfaceRaised),
+                    in: shape
+                )
+                .overlay(shape.stroke(isOn ? Theme.accentDeep.opacity(0.9) : Theme.borderStrong,
+                                      lineWidth: contrast == .increased ? 1.5 : 1))
+                .contentShape(shape)
+        }
+        .buttonStyle(.bare)
+        .keyboardFocusable()
+        .onHover { hovering = $0 }
+        // The tooltip and VoiceOver label prefer the help text, since the visible text is often
+        // a bare symbol or mode name.
+        .help(help.map(localized) ?? text)
+        .accessibilityLabel(help.map(localized) ?? text)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+        .animation(.easeOut(duration: 0.12), value: isOn)
+    }
+}
