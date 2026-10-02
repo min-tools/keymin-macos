@@ -107,6 +107,143 @@ enum Theme {
     }
 }
 
+// MARK: - Buttons
+
+/// How a button is filled: `primary` is the accent call to action, `secondary` the default,
+/// `ghost` has no resting fill, `danger` is tinted red, and `link` reads as text.
+enum ButtonVariant { case primary, secondary, ghost, danger, link }
+/// Regular buttons are `Theme.controlHeight` tall, small ones `Theme.smallControlHeight`.
+enum ButtonSize { case regular, small }
+
+/// The single button style of the app. Hover changes the fill or glow but never the shape, and a
+/// button's own shortcut is printed on it as a chip.
+struct KeyminButtonStyle: ButtonStyle {
+    var variant: ButtonVariant = .secondary
+    var size: ButtonSize = .regular
+    var shortcut: String? = nil
+
+    // makeBody(configuration): Hand the label to KeyminButtonBody, a view that can track hover.
+    func makeBody(configuration: Configuration) -> some View {
+        KeyminButtonBody(configuration: configuration, variant: variant, size: size, shortcut: shortcut)
+    }
+}
+
+extension ButtonStyle where Self == KeyminButtonStyle {
+    // keymin([variant = .secondary], [size = .regular], [shortcut = nil]): Dot-syntax access to the
+    // style, as in `.buttonStyle(.keymin(.primary))`.
+    static func keymin(_ variant: ButtonVariant = .secondary, size: ButtonSize = .regular, shortcut: String? = nil) -> KeyminButtonStyle {
+        KeyminButtonStyle(variant: variant, size: size, shortcut: shortcut)
+    }
+}
+
+/// The drawn body of `KeyminButtonStyle`, a separate view so it can track hover.
+private struct KeyminButtonBody: View {
+    let configuration: ButtonStyle.Configuration
+    let variant: ButtonVariant
+    let size: ButtonSize
+    let shortcut: String?
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovering = false
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: size == .small ? 8 : Theme.radius, style: .continuous)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            configuration.label
+                .lineLimit(1)
+            // Print the owned shortcut as a chip; on the accent fill it uses the lighter cap style.
+            if let shortcut {
+                KeyCap(shortcut, style: variant == .primary ? .onAccent : .embedded)
+            }
+        }
+        .font(.system(size: size == .small ? 12 : 13, weight: .semibold))
+        .foregroundStyle(foreground)
+        .padding(.horizontal, variant == .link ? 2 : (size == .small ? 11 : 14))
+        .frame(height: size == .small ? Theme.smallControlHeight : Theme.controlHeight)
+        // Fill, border, top highlight, and glow all follow the variant and the hover and pressed
+        // state; the whole shape is the hit area.
+        .background(AnyShapeStyle(fill), in: shape)
+        .overlay(shape.stroke(borderColor, lineWidth: 1))
+        .overlay(topHighlight)
+        .shadow(color: glowColor, radius: hovering ? 14 : 9, y: 3)
+        .contentShape(shape)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.15), value: hovering)
+        .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
+    }
+
+    /// Hover and pressing shift the fill by variant; a disabled button goes flat, and ghost and
+    /// link buttons have no resting fill.
+    private var fill: any ShapeStyle {
+        let pressed = configuration.isPressed
+        switch variant {
+        case .primary:
+            // A disabled primary button fades to a flat tint without the gradient.
+            if !isEnabled { return Theme.accent.opacity(0.22) }
+            return Theme.accentGradient
+        case .secondary:
+            // A disabled secondary button sits flat on the base surface.
+            if !isEnabled { return Theme.surface }
+            return pressed ? Theme.surface : hovering ? Theme.textPrimary.opacity(0.10) : Theme.surfaceRaised
+        case .ghost:
+            return pressed ? Theme.textPrimary.opacity(0.12) : hovering ? Theme.textPrimary.opacity(0.07) : Color.clear
+        case .danger:
+            return Theme.danger.opacity(pressed ? 0.24 : hovering ? 0.18 : 0.12)
+        case .link:
+            return Color.clear
+        }
+    }
+
+    /// Disabled buttons drop to the tertiary label color or a faded tint; pressed filled and
+    /// ghost buttons dim slightly.
+    private var foreground: Color {
+        switch variant {
+        case .primary:
+            return Theme.onAccent.opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.42)
+        case .secondary, .ghost:
+            return isEnabled ? Theme.textPrimary.opacity(configuration.isPressed ? 0.8 : 1) : Theme.textTertiary
+        case .danger:
+            return isEnabled ? Theme.danger : Theme.danger.opacity(0.4)
+        case .link:
+            return isEnabled ? (hovering ? Theme.accentBright : Theme.accent) : Theme.textTertiary
+        }
+    }
+
+    /// Only filled and danger buttons draw a border; it lightens when disabled, and a disabled
+    /// primary button has none.
+    private var borderColor: Color {
+        switch variant {
+        case .primary: return isEnabled ? Theme.accentDeep.opacity(0.9) : Color.clear
+        case .secondary: return isEnabled ? Theme.borderStrong : Theme.border
+        case .ghost, .link: return Color.clear
+        case .danger: return Theme.danger.opacity(isEnabled ? 0.45 : 0.2)
+        }
+    }
+
+    /// Only enabled primary buttons glow, and hover strengthens it.
+    private var glowColor: Color {
+        guard isEnabled, variant == .primary else { return .clear }
+        return Theme.accent.opacity(hovering ? 0.5 : 0.35)
+    }
+
+    /// The one-point highlight along the top edge that gives controls their lift.
+    @ViewBuilder private var topHighlight: some View {
+        // Only enabled filled buttons get the highlight; it is brighter on the accent fill.
+        if variant == .primary || variant == .secondary, isEnabled {
+            shape.stroke(
+                LinearGradient(
+                    colors: [Color.white.opacity(variant == .primary ? 0.32 : 0.09), .clear, .clear],
+                    startPoint: .top, endPoint: .bottom
+                ),
+                lineWidth: 1
+            )
+            .padding(0.5)
+        }
+    }
+}
+
 // MARK: - Chips, caps, and pills
 
 /// A keyboard-shortcut cap. A standalone cap sits beside a control, such as the search field's
