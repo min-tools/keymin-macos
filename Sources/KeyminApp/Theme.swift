@@ -372,3 +372,59 @@ struct ShortcutCaps: View {
         .accessibilityLabel(SkhdShortcutText.symbols(modifiers: modifiers, key: key))
     }
 }
+
+/// A small value chip, optionally with a lighter secondary label.
+struct Chip: View {
+    let text: String
+    var secondary: String? = nil
+    var selected = false
+    var mono = true
+    var tone: Tone = .neutral
+    var compact = false
+    var interactive = false
+    @Environment(\.colorSchemeContrast) private var contrast
+    @State private var hovering = false
+
+    private var emphasized: Bool { selected || (interactive && hovering) }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(localized(text))
+                .font(mono ? Theme.mono(compact ? 11 : 12, weight: .medium) : .system(size: compact ? 11 : 12, weight: .medium))
+                .foregroundStyle(chipText)
+                .lineLimit(1)
+            // The optional secondary label sits beside the value in a lighter weight.
+            if let secondary {
+                Text(localized(secondary))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .padding(.horizontal, compact ? 7 : 9)
+        .padding(.vertical, compact ? 3 : 5)
+        // Only interactive chips track hover; the stroke thickens in Increase Contrast.
+        .background(chipBackground, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
+            .stroke(chipBorder, lineWidth: contrast == .increased ? 1.5 : 1))
+        .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .onHover { hovering = interactive && $0 }
+        .animation(.easeOut(duration: 0.12), value: emphasized)
+    }
+
+    // Toned chips take text, fill, and border from the tone at fixed opacities. Neutral chips use
+    // the badge palette and switch to its active set when selected or hovered.
+    private var chipText: Color {
+        guard tone == .neutral else { return Theme.color(for: tone) }
+        return emphasized ? Theme.badgeActiveText : Theme.badgeText
+    }
+
+    private var chipBackground: Color {
+        guard tone == .neutral else { return Theme.color(for: tone).opacity(0.1) }
+        return emphasized ? Theme.badgeActiveBackground : Theme.badgeBackground
+    }
+
+    private var chipBorder: Color {
+        guard tone == .neutral else { return Theme.color(for: tone).opacity(0.35) }
+        return emphasized ? Theme.badgeActiveBorder : Theme.badgeBorder
+    }
+}
