@@ -428,3 +428,27 @@ struct Chip: View {
         return emphasized ? Theme.badgeActiveBorder : Theme.badgeBorder
     }
 }
+
+/// A status dot with a label, such as Saved or Unsaved changes.
+struct StatusPill: View {
+    let tone: Tone
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // The dot carries the tone and glows faintly so the state reads at a glance.
+            Circle()
+                .fill(Theme.color(for: tone))
+                .frame(width: 7, height: 7)
+                .shadow(color: Theme.color(for: tone).opacity(0.8), radius: 2)
+            Text(localized(text))
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(Theme.textPrimary)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 12)
+        .frame(height: Theme.controlHeight)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.borderStrong, lineWidth: 1))
+    }
+}
