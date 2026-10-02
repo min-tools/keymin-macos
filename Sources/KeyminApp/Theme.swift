@@ -136,6 +136,29 @@ extension ButtonStyle where Self == KeyminButtonStyle {
     }
 }
 
+/// A label-only style for rows, chips, and segments that draw their own states. Unlike the
+/// system's plain style it adds no hover capsule, so custom fills keep their exact shape.
+struct BareButtonStyle: ButtonStyle {
+    // makeBody(configuration): Show the label as is and only dim it while pressed.
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.75 : 1)
+    }
+}
+
+extension ButtonStyle where Self == BareButtonStyle {
+    static var bare: BareButtonStyle { BareButtonStyle() }
+}
+
+extension View {
+    // keyboardFocusable(): Opt a custom control into macOS keyboard navigation even when the
+    // system preference only tabs between text fields. Buttons keep their native Space and Return
+    // activation behavior.
+    func keyboardFocusable() -> some View {
+        focusable(true, interactions: .activate)
+    }
+}
+
 /// The drawn body of `KeyminButtonStyle`, a separate view so it can track hover.
 private struct KeyminButtonBody: View {
     let configuration: ButtonStyle.Configuration
