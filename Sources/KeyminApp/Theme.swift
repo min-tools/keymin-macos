@@ -620,3 +620,42 @@ struct ToggleCard: View {
         .card()
     }
 }
+
+/// A unified segmented control with an inset selected segment on a quiet shared track.
+struct SegmentedControl: View {
+    let options: [String]
+    @Binding var selection: Int
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    var body: some View {
+        // Each segment is its own focusable button; only the selected one draws the inset fill.
+        HStack(spacing: 0) {
+            ForEach(Array(options.enumerated()), id: \.offset) { index, option in
+                Button { selection = index } label: {
+                    Text(localized(option))
+                        .font(.system(size: 13, weight: selection == index ? .semibold : .medium))
+                        .foregroundStyle(selection == index ? Theme.textPrimary : Theme.textSecondary)
+                        .padding(.horizontal, 14)
+                        .frame(height: Theme.controlHeight - 4)
+                        .background(
+                            selection == index ? Theme.segmentSelected : Color.clear,
+                            in: RoundedRectangle(cornerRadius: Theme.radius - 2, style: .continuous)
+                        )
+                        .contentShape(RoundedRectangle(cornerRadius: Theme.radius - 2, style: .continuous))
+                }
+                .buttonStyle(.bare)
+                .keyboardFocusable()
+                .accessibilityAddTraits(selection == index ? .isSelected : [])
+            }
+        }
+        .padding(2)
+        .frame(height: Theme.controlHeight)
+        // The track hugs its segments instead of stretching to the available width.
+        .fixedSize(horizontal: true, vertical: true)
+        .background(Theme.segmentTrack)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+            .stroke(Theme.badgeBorder, lineWidth: contrast == .increased ? 1.5 : 1))
+        .animation(.easeOut(duration: 0.15), value: selection)
+    }
+}
