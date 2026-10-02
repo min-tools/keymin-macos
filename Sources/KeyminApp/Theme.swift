@@ -267,6 +267,28 @@ private struct KeyminButtonBody: View {
     }
 }
 
+/// A 34 pt square icon button that lines up with text buttons.
+struct IconButton: View {
+    let symbol: String
+    /// The tooltip and accessibility label, as English source text.
+    var help: String
+    var variant: ButtonVariant = .secondary
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 18, height: 18)
+        }
+        .buttonStyle(.keymin(variant))
+        .keyboardFocusable()
+        .frame(width: Theme.controlHeight, height: Theme.controlHeight)
+        .help(localized(help))
+        .accessibilityLabel(localized(help))
+    }
+}
+
 // MARK: - Chips, caps, and pills
 
 /// A keyboard-shortcut cap. A standalone cap sits beside a control, such as the search field's
