@@ -565,3 +565,29 @@ struct NoticeCard: View {
         .overlay(RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous).stroke(Theme.color(for: tone).opacity(0.35), lineWidth: 1))
     }
 }
+
+// MARK: - Controls
+
+/// A capsule switch in the accent color.
+struct SwitchControl: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button { isOn.toggle() } label: {
+            // The knob springs to the side that matches the state; the track takes the accent
+            // when on.
+            ZStack(alignment: isOn ? .trailing : .leading) {
+                Capsule().fill(isOn ? AnyShapeStyle(Theme.accentGradient) : AnyShapeStyle(Theme.borderStrong))
+                Circle()
+                    .fill(.white)
+                    .padding(3)
+                    .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+            }
+            .frame(width: 44, height: 24)
+            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isOn)
+        }
+        .buttonStyle(.bare)
+        .keyboardFocusable()
+        .accessibilityValue(localized(isOn ? "On" : "Off"))
+    }
+}
