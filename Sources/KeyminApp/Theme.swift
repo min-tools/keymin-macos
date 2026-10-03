@@ -755,6 +755,68 @@ struct ToggleChip: View {
     }
 }
 
+extension Notification.Name {
+    /// Posted by the Find Binding menu command with the key window as the object; the sidebar
+    /// search field in that window takes focus.
+    static let focusSidebarSearch = Notification.Name("tools.min.keymin.focus-sidebar-search")
+}
+
+/// A search box with a leading magnifier, a clear button, and an optional shortcut cap. The
+/// sidebar's binding filter uses it.
+struct SearchField: View {
+    let placeholder: String
+    @Binding var text: String
+    /// A shortcut cap shown while the box is empty, such as ⌘F.
+    var trailing: String? = nil
+    var compact = false
+    /// Marks the sidebar field: it takes focus when the window opens and answers the Find
+    /// Binding command.
+    var focusOnWindowOpen = false
+    var textVerticalOffset: CGFloat = -2
+    @State private var isFocused = false
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Theme.textTertiary)
+            // The field that focuses on open is the sidebar's, so it also handles the Find
+            // Binding command; focus drives the border and glow below.
+            StableTextInput(
+                placeholder: localized(placeholder),
+                text: $text,
+                font: .systemFont(ofSize: compact ? 12.5 : 13),
+                contentHeight: compact ? 18 : 20,
+                textVerticalOffset: textVerticalOffset,
+                focusOnWindowOpen: focusOnWindowOpen,
+                handlesSidebarSearchCommand: focusOnWindowOpen,
+                onFocusChange: { isFocused = $0 }
+            )
+            .frame(height: compact ? 18 : 20)
+            // A query replaces the shortcut cap with a clear button.
+            if !text.isEmpty {
+                Button { text = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textTertiary)
+                }
+                .buttonStyle(.bare)
+                .keyboardFocusable()
+                .accessibilityLabel(localized("Clear search"))
+            } else if let trailing {
+                // An empty box shows the shortcut that focuses it, when one is given.
+                KeyCap(trailing)
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: compact ? 32 : 38)
+        // Focus switches the border to the accent and adds a soft glow.
+        .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+            .stroke(isFocused ? Theme.accent : Theme.border, lineWidth: isFocused ? 1.5 : 1))
+        .shadow(color: isFocused ? Theme.accent.opacity(0.25) : .clear, radius: 8)
+        .animation(.easeOut(duration: 0.15), value: isFocused)
+    }
+}
+
 /// A single-line text field with custom chrome, used for names, key codes, and paths.
 struct InputField: View {
     let placeholder: String
