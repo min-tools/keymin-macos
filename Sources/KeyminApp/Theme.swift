@@ -1344,3 +1344,179 @@ extension View {
             }
     }
 }
+
+/// Reopens the editor where the user left it. Keymin saves the frame itself after every move or
+/// resize once the window is key, and brings it back only when the app launches straight into a
+/// configuration; the first-run screen opens centered at the default size. A restored frame and
+/// the default size are both shrunk and moved as needed to fit the visible area of the window's
+/// screen, so a smaller display never leaves an edge off screen, but never below the minimum
+/// size; on a screen smaller than that, the title bar stays on screen. AppKit's frame autosave is
+/// not used because SwiftUI manages that name on its own windows and stops it saving.
+struct WindowFrameMemory: NSViewRepresentable {
+    /// The defaults key that holds the frame description.
+    let key: String
+    /// Whether the saved frame applies; false gives the default, centered window, fitted to the
+    /// screen.
+    let restores: Bool
+
+    // makeNSView(context): Create the memory view with the defaults key and the restore flag.
+    func makeNSView(context: Context) -> NSView {
+        let view = MemoryView()
+        view.key = key
+        view.restores = restores
+        return view
+    }
+
+    // updateNSView(nsView, context): Keep the restore flag current; it follows whether a
+    // configuration is open.
+    func updateNSView(_ nsView: NSView, context: Context) {
+        (nsView as? MemoryView)?.restores = restores
+    }
+
+    /// The attached view that places the window and records its frame.
+    private final class MemoryView: NSView {
+        var key = ""
+        var restores = false
+        /// The window already placed, so re-attaching to the same window does nothing.
+        private weak var placedWindow: NSWindow?
+        private var observers: [NSObjectProtocol] = []
+        /// The debounced frame write; replaced on every move until the window settles.
+        private var pendingSave: DispatchWorkItem?
+        /// True while every move SwiftUI makes is undone, from attachment until the window is key.
+        private var holdsFrame = false
+        /// Re-entrancy guard: place() moves the window, which posts the notifications hold()
+        /// answers.
+        private var isHolding = false
+
+        // viewDidMoveToWindow(): Place a newly attached window, hold the saved frame while SwiftUI
+        // positions it, and start saving once it is key.
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            stopObserving()
+            guard let window, window !== placedWindow else { return }
+            placedWindow = window
+            // Place the window early so it never appears at the wrong size, then again once
+            // SwiftUI has finished applying the scene's size and position after attachment.
+            place(window)
+            // SwiftUI positions the window once more as it is shown, after both placements
+            // above, so hold the saved frame: each of its moves is undone inside the same
+            // call, and the first frame on screen is already the remembered one.
+            if restores {
+                holdsFrame = true
+                for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {
+                    observe(name, on: window) { [weak self] window in self?.hold(window) }
+                }
+            }
+            DispatchQueue.main.async { [weak self, weak window] in
+                guard let self, let window, self.window === window else { return }
+                self.place(window)
+                // Saving starts only once the window is key, when SwiftUI's own placement is
+                // over; anything recorded earlier could be that placement, not the user's.
+                if window.isKeyWindow {
+                    self.startSaving(window)
+                } else {
+                    // Not key yet: wait for it.
+                    self.observe(NSWindow.didBecomeKeyNotification, on: window) { [weak self] window in
+                        self?.startSaving(window)
+                    }
+                }
+            }
+        }
+
+        // hold(window): Put the saved frame back after a move or resize made before the window
+        // is key.
+        private func hold(_ window: NSWindow) {
+            guard holdsFrame, !isHolding else { return }
+            isHolding = true
+            defer { isHolding = false }
+            place(window)
+        }
+
+        // place(window): Apply the remembered frame when the editor opens directly; otherwise
+        // size and center the standard window. Either frame is fitted to the screen.
+        private func place(_ window: NSWindow) {
+            // Restoring applies the saved frame, if one has been recorded.
+            if restores {
+                // Without a saved frame the window stays where SwiftUI put it.
+                if let description = UserDefaults.standard.string(forKey: key) {
+                    window.setFrame(from: description)
+                    fitOnScreen(window)
+                }
+            } else {
+                // The first-run screen opens centered at the default size, or smaller on a small
+                // screen.
+                window.setContentSize(KeyminWindow.defaultSize)
+                fitOnScreen(window)
+                window.center()
+            }
+        }
+
+        // fitOnScreen(window): Shrink and move the window so it lies inside its screen's visible
+        // area. The default size, or a frame saved on a larger display, could otherwise leave the
+        // window's edges, close button included, off screen. It never shrinks below the minimum
+        // size the layout needs; when even that does not fit, the top-left corner, with the title
+        // bar and close button, stays on screen.
+        private func fitOnScreen(_ window: NSWindow) {
+            guard let visible = (window.screen ?? NSScreen.main)?.visibleFrame else { return }
+            let minimum = window.frameRect(forContentRect: NSRect(origin: .zero, size: KeyminWindow.minimumSize)).size
+            var frame = window.frame
+            frame.size.width = max(min(frame.width, visible.width), minimum.width)
+            frame.size.height = max(min(frame.height, visible.height), minimum.height)
+            frame.origin.x = max(min(frame.minX, visible.maxX - frame.width), visible.minX)
+            frame.origin.y = min(max(frame.minY, visible.minY), visible.maxY - frame.height)
+            // Only touch the window when it does not already fit.
+            if frame != window.frame { window.setFrame(frame, display: false) }
+        }
+
+        // startSaving(window): Restore one last time, then record every later move and resize.
+        private func startSaving(_ window: NSWindow) {
+            holdsFrame = false
+            stopObserving()
+            place(window)
+            // SwiftUI may still nudge the window right after it becomes key; wait that out so
+            // the first recorded frame is one the user chose.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self, weak window] in
+                guard let self, let window, self.window === window else { return }
+                for name in [NSWindow.didMoveNotification, NSWindow.didResizeNotification] {
+                    self.observe(name, on: window) { [weak self] window in self?.scheduleSave(window) }
+                }
+            }
+        }
+
+        // scheduleSave(window): Write the frame once the window has settled; full-screen frames
+        // are never kept.
+        private func scheduleSave(_ window: NSWindow) {
+            // A burst of move and resize notifications collapses into one write a quarter
+            // second after the last.
+            pendingSave?.cancel()
+            let work = DispatchWorkItem { [weak window, key] in
+                guard let window, !window.styleMask.contains(.fullScreen) else { return }
+                UserDefaults.standard.set(window.frameDescriptor, forKey: key)
+            }
+            pendingSave = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
+        }
+
+        // observe(name, on window, handler): Watch this window notification, pass the window
+        // to handler when it arrives, and keep the observer token
+        // for stopObserving().
+        private func observe(_ name: Notification.Name, on window: NSWindow, _ handler: @escaping (NSWindow) -> Void) {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak window] _ in
+                guard let window else { return }
+                handler(window)
+            })
+        }
+
+        // stopObserving(): Remove every window observer.
+        private func stopObserving() {
+            for observer in observers { NotificationCenter.default.removeObserver(observer) }
+            observers = []
+        }
+
+        // deinit(): Drop the observers and any pending write.
+        deinit {
+            stopObserving()
+            pendingSave?.cancel()
+        }
+    }
+}
