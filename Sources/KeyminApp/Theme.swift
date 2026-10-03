@@ -754,3 +754,437 @@ struct ToggleChip: View {
         .animation(.easeOut(duration: 0.12), value: isOn)
     }
 }
+
+/// A single-line text field with custom chrome, used for names, key codes, and paths.
+struct InputField: View {
+    let placeholder: String
+    @Binding var text: String
+    var mono = false
+    var onSubmit: (() -> Void)? = nil
+    @State private var isFocused = false
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 8, style: .continuous) }
+
+    var body: some View {
+        StableTextInput(
+            placeholder: localized(placeholder),
+            text: $text,
+            font: mono ? .monospacedSystemFont(ofSize: 12.5, weight: .regular) : .systemFont(ofSize: 13),
+            contentHeight: 20,
+            textVerticalOffset: -1,
+            onFocusChange: { isFocused = $0 },
+            onSubmit: onSubmit
+        )
+        .frame(height: 20)
+        .padding(.horizontal, 10)
+        .frame(height: Theme.smallControlHeight + 2)
+        // Focus switches the border to the accent.
+        .background(Theme.inputBackground, in: shape)
+        .overlay(shape.stroke(isFocused ? Theme.accent : Theme.inputBorder, lineWidth: isFocused ? 1.5 : 1))
+        .animation(.easeOut(duration: 0.15), value: isFocused)
+    }
+}
+
+/// A single-line input built on its own text view, used behind every custom field. Unlike a text
+/// field it never hands editing to the window's shared field editor, so text and placeholder keep
+/// one baseline whether focused or not.
+struct StableTextInput: NSViewRepresentable {
+    let placeholder: String
+    @Binding var text: String
+    let font: NSFont
+    let contentHeight: CGFloat
+    /// Nudge of the text from the mathematical center; most field chrome reads best 2 pt up.
+    var textVerticalOffset: CGFloat = -2
+    var focusOnWindowOpen = false
+    var handlesSidebarSearchCommand = false
+    /// Moves keyboard focus into the field on the update where it turns true. Only that rising
+    /// edge counts, so set it back to false before requesting focus again.
+    var requestedFocus = false
+    var onFocusChange: ((Bool) -> Void)?
+    var onSubmit: (() -> Void)?
+
+    // makeCoordinator(): The delegate that pushes edits into the binding.
+    func makeCoordinator() -> Coordinator { Coordinator(text: $text) }
+
+    // makeNSView(context): Build the scroll view and text view pair, then wire up the delegate,
+    // placeholder, focus options, callbacks, and accessibility.
+    func makeNSView(context: Context) -> StableInputScrollView {
+        let scrollView = StableInputScrollView(
+            font: font,
+            contentHeight: contentHeight,
+            textVerticalOffset: textVerticalOffset
+        )
+        let textView = scrollView.textView
+        textView.delegate = context.coordinator
+        textView.placeholderAttributedString = placeholderText
+        textView.focusOnWindowOpen = focusOnWindowOpen
+        textView.handlesSidebarSearchCommand = handlesSidebarSearchCommand
+        textView.onFocusChange = onFocusChange
+        textView.onSubmit = onSubmit
+        textView.setAccessibilityRole(.textField)
+        textView.setAccessibilityLabel(placeholder)
+        return scrollView
+    }
+
+    // updateNSView(scrollView, context): Push the latest binding, placeholder, options, and
+    // callbacks into the text view, and move focus in when requestedFocus rises.
+    func updateNSView(_ scrollView: StableInputScrollView, context: Context) {
+        context.coordinator.text = $text
+        let textView = scrollView.textView
+        textView.placeholderAttributedString = placeholderText
+        textView.focusOnWindowOpen = focusOnWindowOpen
+        textView.handlesSidebarSearchCommand = handlesSidebarSearchCommand
+        textView.onFocusChange = onFocusChange
+        textView.onSubmit = onSubmit
+        textView.setAccessibilityLabel(placeholder)
+        // Replace the text only when it differs, so typing is never interrupted; a change from
+        // outside puts the caret at the end and clears the field's undo history, whose ranges
+        // refer to the old text. Never while an input method is composing (marked text):
+        // replacing the text then would put the composed characters in the wrong place. The
+        // update that follows the end of the composition applies any difference that remains.
+        if textView.string != text, !textView.hasMarkedText() {
+            textView.string = text
+            context.coordinator.undoManager.removeAllActions()
+            textView.setSelectedRange(NSRange(location: (text as NSString).length, length: 0))
+            textView.needsDisplay = true
+        }
+        // Only a rising edge of requestedFocus moves focus, so one request cannot keep stealing
+        // it back on every later update.
+        let shouldRequestFocus = requestedFocus && !context.coordinator.lastRequestedFocus
+        context.coordinator.lastRequestedFocus = requestedFocus
+        // Defer the responder change so the view is in its window by the time it runs.
+        if shouldRequestFocus, textView.window?.firstResponder !== textView {
+            DispatchQueue.main.async { [weak textView] in
+                guard let textView, let window = textView.window else { return }
+                _ = window.makeFirstResponder(textView)
+            }
+        }
+    }
+
+    /// The placeholder in the field's font and the shared placeholder color.
+    private var placeholderText: NSAttributedString {
+        NSAttributedString(
+            string: placeholder,
+            attributes: [
+                .font: font,
+                .foregroundColor: Theme.inputPlaceholderNSColor
+            ]
+        )
+    }
+
+    /// Receives text view edits and writes them to the SwiftUI binding.
+    final class Coordinator: NSObject, NSTextViewDelegate {
+        var text: Binding<String>
+        /// The requestedFocus value seen on the last update, for edge detection.
+        var lastRequestedFocus = false
+        /// This field's own undo history. Sharing the window's would let ⌘Z replay typing from
+        /// another field, or from text the model has since replaced, and corrupt it.
+        let undoManager = UndoManager()
+
+        // init(text): Keep the binding; updateNSView replaces it when SwiftUI passes a new one.
+        init(text: Binding<String>) { self.text = text }
+
+        // undoManager(for view): Give the text view this field's own undo history.
+        func undoManager(for view: NSTextView) -> UndoManager? { undoManager }
+
+        // textDidChange(notification): Flatten line breaks to spaces, keep the caret after the same
+        // character, and push the text to the binding.
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            let normalized = Self.singleLine(textView.string)
+            // Pasted text can carry line breaks the single-line container cannot show; replace
+            // them and put the caret where the text before it now ends. Not while an input method
+            // is composing, which the replacement would break; its final edit comes back here.
+            if normalized != textView.string, !textView.hasMarkedText() {
+                let current = textView.string as NSString
+                let selection = textView.selectedRange()
+                let before = current.substring(to: min(selection.location, current.length))
+                let caret = (Self.singleLine(before) as NSString).length
+                textView.string = normalized
+                // The replacement is not undoable, so earlier steps would point at the old text.
+                undoManager.removeAllActions()
+                textView.setSelectedRange(NSRange(
+                    location: min(caret, (normalized as NSString).length),
+                    length: 0
+                ))
+            }
+            text.wrappedValue = normalized
+        }
+
+        // singleLine(text): The text with each line break, whether "\r\n", "\r", or "\n", replaced
+        // by one space. The pair goes first so a Windows line break becomes a single space.
+        static func singleLine(_ text: String) -> String {
+            text.replacingOccurrences(of: "\r\n", with: " ")
+                .replacingOccurrences(of: "\r", with: " ")
+                .replacingOccurrences(of: "\n", with: " ")
+        }
+    }
+}
+
+/// A borderless scroll view without scrollers that hosts one `StableInputTextView` at a fixed
+/// height. The SwiftUI chrome draws around it.
+final class StableInputScrollView: NSScrollView {
+    let textView = StableInputTextView(frame: .zero)
+
+    // init(font, contentHeight, textVerticalOffset): Set the text view up as a single clipped
+    // line centered in contentHeight, with every automatic text substitution turned off.
+    init(font: NSFont, contentHeight: CGFloat, textVerticalOffset: CGFloat) {
+        super.init(frame: .zero)
+        // No border, background, scrollers, or inset adjustment; the field chrome is SwiftUI's.
+        borderType = .noBorder
+        drawsBackground = false
+        hasHorizontalScroller = false
+        hasVerticalScroller = false
+        automaticallyAdjustsContentInsets = false
+
+        // Plain text that grows sideways only; the scroll view clips what does not fit.
+        textView.font = font
+        textView.textColor = .labelColor
+        textView.insertionPointColor = .controlAccentColor
+        textView.drawsBackground = false
+        textView.isRichText = false
+        textView.importsGraphics = false
+        textView.allowsUndo = true
+        textView.isVerticallyResizable = false
+        textView.isHorizontallyResizable = true
+        textView.autoresizingMask = [.height]
+        let lineHeight = ceil(font.ascender - font.descender + font.leading)
+        // Center the line in the content height, then apply the caller's optical nudge.
+        textView.textContainerInset = NSSize(
+            width: 0,
+            height: floor((contentHeight - lineHeight) / 2) + textVerticalOffset
+        )
+        // One unbounded line that never wraps: overflow is clipped instead.
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.textContainer?.containerSize = NSSize(
+            width: CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude
+        )
+        textView.textContainer?.widthTracksTextView = false
+        textView.textContainer?.maximumNumberOfLines = 1
+        textView.textContainer?.lineBreakMode = .byClipping
+        // These fields hold names, paths, and queries, so no spelling or substitution help.
+        textView.isContinuousSpellCheckingEnabled = false
+        textView.isGrammarCheckingEnabled = false
+        textView.isAutomaticSpellingCorrectionEnabled = false
+        textView.isAutomaticTextCompletionEnabled = false
+        textView.isAutomaticQuoteSubstitutionEnabled = false
+        textView.isAutomaticDashSubstitutionEnabled = false
+        textView.isAutomaticDataDetectionEnabled = false
+
+        // Pin the height so the intrinsic size below matches the content height exactly.
+        textView.minSize = NSSize(width: 0, height: contentHeight)
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: contentHeight)
+        textView.frame = NSRect(x: 0, y: 0, width: 1, height: contentHeight)
+        documentView = textView
+    }
+
+    /// Exactly the content height; the width comes from the SwiftUI frame.
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: NSView.noIntrinsicMetric, height: textView.minSize.height)
+    }
+
+    // init(coder): Unsupported; the view is only ever built in code.
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+/// The single-line text view behind every custom field. It draws its own placeholder, submits on
+/// Return, moves focus with Tab, and can take focus when its window opens or when the Find
+/// Binding command fires.
+final class StableInputTextView: NSTextView {
+    var placeholderAttributedString: NSAttributedString? {
+        didSet { needsDisplay = true }
+    }
+    /// Takes keyboard focus once, the first time its window is key.
+    var focusOnWindowOpen = false {
+        didSet {
+            guard focusOnWindowOpen != oldValue else { return }
+            configureInitialFocus()
+        }
+    }
+    /// Answers the Find Binding command for its own window.
+    var handlesSidebarSearchCommand = false {
+        didSet {
+            guard handlesSidebarSearchCommand != oldValue else { return }
+            configureSearchCommand()
+        }
+    }
+    var onFocusChange: ((Bool) -> Void)?
+    var onSubmit: (() -> Void)?
+
+    private var keyWindowObserver: NSObjectProtocol?
+    private var searchCommandObserver: NSObjectProtocol?
+    /// True while a deferred focus attempt is queued.
+    private var focusScheduled = false
+    /// Set once the initial focus has landed, so later key changes do not steal focus back.
+    private var appliedInitialFocus = false
+
+    // preferredTextAccessoryPlacement(): Hide the cursor accessory to avoid its empty
+    // translucent placeholder appearing beside the caret during cold launch.
+    override func preferredTextAccessoryPlacement() -> NSTextCursorAccessoryPlacement { .invisible }
+
+    // viewDidMoveToWindow(): Re-arm the window-bound observers for the new window, or drop them
+    // when the view is detached.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        configureInitialFocus()
+        configureSearchCommand()
+    }
+
+    // configureSearchCommand(): Observe the Find Binding command for this view's window only. The
+    // command is posted with the key window as its object, so another open Keymin window never
+    // receives the focus unexpectedly.
+    private func configureSearchCommand() {
+        removeSearchCommandObserver()
+        guard handlesSidebarSearchCommand, let window else { return }
+        searchCommandObserver = NotificationCenter.default.addObserver(
+            forName: .focusSidebarSearch,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.focusFromMenuCommand() }
+        }
+    }
+
+    // focusFromMenuCommand(): Focus the field and select the current query so typing replaces it.
+    private func focusFromMenuCommand() {
+        guard let window, window.isVisible, window.makeFirstResponder(self) else { return }
+        selectAll(nil)
+    }
+
+    // configureInitialFocus(): Arrange a one-time focus for when the window becomes key, and try
+    // right away in case it already is.
+    private func configureInitialFocus() {
+        removeKeyWindowObserver()
+        guard focusOnWindowOpen, !appliedInitialFocus, let window else { return }
+        keyWindowObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.focusWhenWindowIsReady() }
+        }
+        focusWhenWindowIsReady()
+    }
+
+    // focusWhenWindowIsReady(): Take first responder on the next run-loop turn once the window
+    // is visible and key. A call while an attempt is already queued does nothing.
+    private func focusWhenWindowIsReady() {
+        guard !focusScheduled,
+              !appliedInitialFocus,
+              let window,
+              window.isVisible,
+              window.isKeyWindow else { return }
+        focusScheduled = true
+        DispatchQueue.main.async { [weak self, weak window] in
+            guard let self else { return }
+            self.focusScheduled = false
+            // The view may have changed windows, or the window lost key status, while waiting.
+            guard let window,
+                  self.window === window,
+                  window.isVisible,
+                  window.isKeyWindow else { return }
+            // Once focus lands, stop listening so later key changes leave the user's focus alone.
+            if window.makeFirstResponder(self) {
+                self.appliedInitialFocus = true
+                self.removeKeyWindowObserver()
+            }
+        }
+    }
+
+    // keyDown(with event): Let Return submit and Tab move focus; all other keys and keys while an
+    // input method is composing, go to the text view.
+    override func keyDown(with event: NSEvent) {
+        // An input method is composing marked text, so Return and Tab belong to it.
+        if hasMarkedText() {
+            super.keyDown(with: event)
+            return
+        }
+
+        let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
+        switch event.keyCode {
+        case 36, 76:
+            // Return and keypad Enter submit instead of inserting a newline.
+            onSubmit?()
+            return
+        case 48 where modifiers.isEmpty || modifiers == .shift:
+            // Tab and Shift-Tab move between key views instead of inserting a tab character.
+            // Shift reverses the navigation direction.
+            if modifiers.contains(.shift) {
+                window?.selectPreviousKeyView(nil)
+            } else {
+                // Plain Tab walks forward.
+                window?.selectNextKeyView(nil)
+            }
+            return
+        default:
+            break
+        }
+        super.keyDown(with: event)
+    }
+
+    // becomeFirstResponder(): Report focus to SwiftUI once AppKit has accepted it.
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        // Only a responder change AppKit actually made is worth reporting.
+        if accepted { reportFocus(true) }
+        return accepted
+    }
+
+    // resignFirstResponder(): Report the loss of focus to SwiftUI once AppKit has accepted it.
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        // Only a responder change AppKit actually made is worth reporting.
+        if resigned { reportFocus(false) }
+        return resigned
+    }
+
+    // reportFocus(focused): Deliver the focus change on the next turn, so SwiftUI state is not
+    // changed in the middle of AppKit's responder change.
+    private func reportFocus(_ focused: Bool) {
+        guard let onFocusChange else { return }
+        DispatchQueue.main.async { onFocusChange(focused) }
+    }
+
+    // didChangeText(): Redraw so the placeholder appears or disappears with the text.
+    override func didChangeText() {
+        super.didChangeText()
+        needsDisplay = true
+    }
+
+    // draw(dirtyRect): After the text, draw the placeholder in an empty field, starting where
+    // the text itself would start.
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard string.isEmpty, let placeholderAttributedString else { return }
+        let origin = textContainerOrigin
+        placeholderAttributedString.draw(in: NSRect(
+            x: origin.x,
+            y: origin.y,
+            width: max(0, bounds.width - origin.x),
+            height: bounds.height - origin.y
+        ))
+    }
+
+    // removeKeyWindowObserver(): Stop waiting for the window to become key.
+    private func removeKeyWindowObserver() {
+        guard let keyWindowObserver else { return }
+        NotificationCenter.default.removeObserver(keyWindowObserver)
+        self.keyWindowObserver = nil
+    }
+
+    // removeSearchCommandObserver(): Stop answering the Find Binding command.
+    private func removeSearchCommandObserver() {
+        guard let searchCommandObserver else { return }
+        NotificationCenter.default.removeObserver(searchCommandObserver)
+        self.searchCommandObserver = nil
+    }
+
+    // deinit(): Drop both observers.
+    deinit {
+        removeKeyWindowObserver()
+        removeSearchCommandObserver()
+    }
+}
