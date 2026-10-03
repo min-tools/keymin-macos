@@ -380,3 +380,22 @@ final class LineNumberGutterView: NSView {
         }
     }
 }
+
+/// Field chrome around a code editor so it matches the other inputs.
+struct CodeField: View {
+    @Binding var text: String
+    var placeholder = ""
+    var minHeight: CGFloat = 60
+    var maxHeight: CGFloat = 220
+    @State private var isFocused = false
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 8, style: .continuous) }
+
+    var body: some View {
+        CodeTextView(text: $text, placeholder: placeholder, minHeight: minHeight, onFocusChange: { isFocused = $0 })
+            .frame(minHeight: minHeight, maxHeight: maxHeight)
+            .background(Theme.inputBackground, in: shape)
+            .overlay(shape.stroke(isFocused ? Theme.accent : Theme.inputBorder, lineWidth: isFocused ? 1.5 : 1))
+            .animation(.easeOut(duration: 0.15), value: isFocused)
+    }
+}
