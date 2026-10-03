@@ -1,6 +1,132 @@
 import AppKit
 import SwiftUI
 
+/// A monospaced multi-line text editor for shell commands and the configuration source.
+struct CodeTextView: NSViewRepresentable {
+    @Binding var text: String
+    var placeholder = ""
+    var isEditable = true
+    /// Not read by the view: the height comes from the SwiftUI frame the caller applies.
+    var minHeight: CGFloat = 60
+    var fontSize: CGFloat = 12.5
+    /// Colors skhd syntax; only the Source page shows a whole configuration.
+    var highlightsSkhd = false
+    /// Adds a line-number gutter, also only for the Source page.
+    var showsLineNumbers = false
+    /// Reports first-responder changes so the host can draw its own focus ring.
+    var onFocusChange: ((Bool) -> Void)?
+
+    // makeCoordinator(): Give the coordinator the text binding so edits flow back to SwiftUI.
+    func makeCoordinator() -> Coordinator { Coordinator(text: $text) }
+
+    // makeNSView(context): Build the container with its scroll view, text view, and optional
+    // gutter, then apply the initial text and settings.
+    func makeNSView(context: Context) -> CodeEditorContainer {
+        let container = CodeEditorContainer(showsGutter: showsLineNumbers)
+        let scrollView = container.scrollView
+        let textView = Self.makeTextView(in: scrollView)
+        textView.delegate = context.coordinator
+        // Plain monospaced text with undo; every automatic substitution is off because the content
+        // is code, where a smart quote or dash would change its meaning.
+        textView.font = .monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        textView.textColor = .labelColor
+        textView.insertionPointColor = .controlAccentColor
+        textView.drawsBackground = false
+        textView.isRichText = false
+        textView.importsGraphics = false
+        textView.allowsUndo = true
+        textView.isEditable = isEditable
+        textView.isSelectable = true
+        textView.isAutomaticQuoteSubstitutionEnabled = false
+        textView.isAutomaticDashSubstitutionEnabled = false
+        textView.isAutomaticTextReplacementEnabled = false
+        textView.isAutomaticSpellingCorrectionEnabled = false
+        textView.isAutomaticTextCompletionEnabled = false
+        textView.isContinuousSpellCheckingEnabled = false
+        textView.isGrammarCheckingEnabled = false
+        textView.isAutomaticDataDetectionEnabled = false
+        textView.isAutomaticLinkDetectionEnabled = false
+        textView.smartInsertDeleteEnabled = false
+        // The find bar makes the Find command work inside the editor; the insets match the other
+        // inputs, and zero fragment padding keeps the gutter numbers level with the text.
+        textView.usesFindBar = true
+        textView.textContainerInset = NSSize(width: 10, height: 9)
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.placeholder = placeholder
+        textView.onFocusChange = onFocusChange
+        textView.highlightsSkhd = highlightsSkhd
+        textView.string = text
+        textView.applyHighlighting()
+        textView.setAccessibilityLabel(placeholder)
+        container.gutter?.attach(to: textView)
+        return container
+    }
+
+    // makeTextView(in scrollView): Build the editor on its own TextKit 1 stack, so the
+    // line-number gutter can enumerate line fragments through the layout manager. The text view
+    // grows with its text and wraps at the scroll view's width.
+    private static func makeTextView(in scrollView: NSScrollView) -> CodeEditorTextView {
+        let textView = CodeEditorTextView(usingTextLayoutManager: false)
+        textView.frame = NSRect(origin: .zero, size: scrollView.contentSize)
+        textView.minSize = NSSize(width: 0, height: 0)
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.autoresizingMask = [.width]
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: CGFloat.greatestFiniteMagnitude)
+        scrollView.documentView = textView
+        return textView
+    }
+
+    // updateNSView(container, context): Push the current settings into the text view and replace
+    // its text only when the model changed elsewhere.
+    func updateNSView(_ container: CodeEditorContainer, context: Context) {
+        guard let textView = container.scrollView.documentView as? CodeEditorTextView else { return }
+        context.coordinator.text = $text
+        textView.isEditable = isEditable
+        textView.placeholder = placeholder
+        textView.onFocusChange = onFocusChange
+        textView.highlightsSkhd = highlightsSkhd
+        // Resetting the text on every update would fight the user's typing, so only do it when
+        // the model differs; keep the caret near its place and redraw the gutter for the new text.
+        // Never while an input method is composing (marked text): replacing the text then would
+        // put the composed characters in the wrong place. The update that follows the end of the
+        // composition applies any difference that remains.
+        if textView.string != text, !textView.hasMarkedText() {
+            let selection = textView.selectedRange()
+            textView.string = text
+            // The undo history refers to the old text, so it cannot be replayed on the new one.
+            context.coordinator.undoManager.removeAllActions()
+            let length = (text as NSString).length
+            textView.setSelectedRange(NSRange(location: min(selection.location, length), length: 0))
+            textView.applyHighlighting()
+            textView.needsDisplay = true
+            container.gutter?.refresh()
+        }
+    }
+
+    /// Forwards edits from the text view to the SwiftUI binding.
+    final class Coordinator: NSObject, NSTextViewDelegate {
+        var text: Binding<String>
+        /// This editor's own undo history. Sharing the window's would let ⌘Z replay typing from
+        /// another field, or from text the model has since replaced, and corrupt it.
+        let undoManager = UndoManager()
+
+        // init(text): Keep the binding that edits are written into.
+        init(text: Binding<String>) { self.text = text }
+
+        // undoManager(for view): Give the text view this editor's own undo history.
+        func undoManager(for view: NSTextView) -> UndoManager? { undoManager }
+
+        // textDidChange(notification): Copy the edited text into the binding.
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
+            text.wrappedValue = textView.string
+        }
+    }
+}
+
 /// The text view itself: draws the placeholder, reports focus changes, and re-highlights after
 /// every edit.
 final class CodeEditorTextView: NSTextView {
