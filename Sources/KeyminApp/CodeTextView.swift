@@ -72,6 +72,62 @@ final class CodeEditorTextView: NSTextView {
     }
 }
 
+/// Lays out the optional gutter beside the scroll view using frames, keeping their widths
+/// coordinated as SwiftUI resizes the editor.
+final class CodeEditorContainer: NSView {
+    let scrollView = NSScrollView()
+    /// Present only when the editor was created with line numbers.
+    let gutter: LineNumberGutterView?
+
+    // init(showsGutter): Build the borderless scroll view and, when asked, the gutter, then place
+    // them once.
+    init(showsGutter: Bool) {
+        gutter = showsGutter ? LineNumberGutterView() : nil
+        super.init(frame: .zero)
+        // macOS 14 stopped clipping subviews by default; the gutter must not paint its neighbors.
+        clipsToBounds = true
+        // Transparent, vertical-only scrolling; the host draws the background and border.
+        scrollView.borderType = .noBorder
+        scrollView.drawsBackground = false
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+        addSubview(scrollView)
+        // The gutter widens with the line count, and the scroll view must move over when it does.
+        if let gutter {
+            addSubview(gutter)
+            gutter.onThicknessChange = { [weak self] _ in self?.placeSubviews() }
+        }
+        placeSubviews()
+    }
+
+    // init(coder): Unsupported; the container is only created in code.
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Top-left origin, so the frames below read naturally.
+    override var isFlipped: Bool { true }
+
+    /// The editor fills whatever SwiftUI proposes; it has no size of its own.
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric)
+    }
+
+    // setFrameSize(newSize): Re-place the subviews whenever SwiftUI resizes the container.
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        placeSubviews()
+    }
+
+    // placeSubviews(): Put the gutter at the left edge and give the scroll view the rest.
+    private func placeSubviews() {
+        let thickness = gutter?.thickness ?? 0
+        gutter?.frame = NSRect(x: 0, y: 0, width: thickness, height: bounds.height)
+        scrollView.frame = NSRect(x: thickness, y: 0, width: max(0, bounds.width - thickness), height: bounds.height)
+    }
+}
+
 /// A gutter that numbers the lines of the Source editor. Wrapped continuations of a long line
 /// get no number, and the empty line after a final newline is numbered like any editor does.
 final class LineNumberGutterView: NSView {
