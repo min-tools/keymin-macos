@@ -154,3 +154,37 @@ final class KeyRecorder: ObservableObject {
         return .code(code)
     }
 }
+
+/// The button that starts and stops recording, showing the held modifiers while it listens.
+struct RecordShortcutButton: View {
+    @ObservedObject var recorder: KeyRecorder
+    let onCapture: ([SkhdModifier], SkhdKey) -> Void
+
+    /// The label while recording shows the modifiers held so far.
+    private var title: String {
+        guard recorder.isRecording else { return localized("Record Shortcut") }
+        let held = recorder.heldModifiers.map(\.symbol).joined()
+        return held.isEmpty ? localized("Press keys… (Esc to cancel)") : localizedFormat("Press keys… %@", held)
+    }
+
+    var body: some View {
+        Button {
+            recorder.begin(onCapture: onCapture)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: recorder.isRecording ? "record.circle.fill" : "record.circle")
+                    .foregroundStyle(recorder.isRecording ? Theme.danger : Theme.textPrimary)
+                Text(title)
+            }
+        }
+        .buttonStyle(.keymin(recorder.isRecording ? .danger : .secondary, shortcut: recorder.isRecording ? nil : "⌘R"))
+        .keyboardFocusable()
+        // The Record Shortcut menu command (⌘R) starts recording unless it is already running;
+        // leaving the binding page stops it so the monitors do not outlive the button.
+        .onReceive(NotificationCenter.default.publisher(for: .recordShortcut)) { _ in
+            // The menu starts recording; it must not toggle an active recording off.
+            if !recorder.isRecording { recorder.begin(onCapture: onCapture) }
+        }
+        .onDisappear { recorder.cancel() }
+    }
+}
