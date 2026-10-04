@@ -95,3 +95,33 @@ enum AppResolver {
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 }
+
+/// A small drawn button that opens a native pop-up menu.
+struct MenuButton: View {
+    /// A localization key; the button localizes it itself.
+    let title: String
+    /// Built on every click, so the list is always current.
+    let entries: () -> [PopUpMenuEntry]
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 8, style: .continuous) }
+
+    var body: some View {
+        PopUpMenuButton(accessibilityLabel: localized(title)) {
+            HStack(spacing: 6) {
+                Text(localized(title))
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(Theme.textPrimary)
+            .padding(.horizontal, 11)
+            .frame(height: Theme.smallControlHeight)
+            .background(Theme.surfaceRaised, in: shape)
+            .overlay(shape.stroke(Theme.borderStrong, lineWidth: contrast == .increased ? 1.5 : 1))
+        } entries: {
+            entries()
+        }
+    }
+}
