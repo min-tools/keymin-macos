@@ -1,0 +1,97 @@
+import AppKit
+import SwiftUI
+import UniformTypeIdentifiers
+
+/// What the editor shows for an app: its name and icon as macOS knows them.
+struct ResolvedApp {
+    let title: String
+    let subtitle: String?
+    let icon: NSImage
+    /// False when a bundle identifier is not found on this Mac; the editor then shows a warning.
+    let isInstalled: Bool
+}
+
+/// Looks apps up for the editor: by bundle identifier or path, from the running-app list, or
+/// through an Open panel.
+enum AppResolver {
+    // resolve(command): Describe the app a parsed open-app command targets. A bundle identifier
+    // is looked up through Launch Services, which finds apps anywhere on the Mac even when the
+    // sandbox cannot read their folder.
+    static func resolve(_ command: OpenAppCommand) -> ResolvedApp {
+        let workspace = NSWorkspace.shared
+        switch command.target {
+        case .bundleIdentifier(let identifier):
+            guard let url = workspace.urlForApplication(withBundleIdentifier: identifier) else {
+                return ResolvedApp(
+                    title: identifier,
+                    subtitle: localized("App not found on this Mac"),
+                    icon: workspace.icon(for: .applicationBundle),
+                    isInstalled: false
+                )
+            }
+            return ResolvedApp(title: displayName(of: url), subtitle: identifier, icon: workspace.icon(forFile: url.path), isInstalled: true)
+        case .application(let name):
+            // An absolute path names the bundle directly, so its real name and icon can be shown.
+            if name.hasPrefix("/") {
+                let url = URL(fileURLWithPath: name)
+                return ResolvedApp(title: displayName(of: url), subtitle: name, icon: workspace.icon(forFile: url.path), isInstalled: true)
+            }
+            // A bare name is resolved by `open` at run time, so only the name itself is known.
+            return ResolvedApp(title: name, subtitle: localized("Opened by name"), icon: workspace.icon(for: .applicationBundle), isInstalled: true)
+        }
+    }
+
+    // displayName(of url): Return the Finder name without a trailing `.app`.
+    private static func displayName(of url: URL) -> String {
+        let name = FileManager.default.displayName(atPath: url.path)
+        return name.hasSuffix(".app") ? String(name.dropLast(4)) : name
+    }
+
+    // chooseApplication(completion): Let the user pick any app bundle and report its bundle
+    // identifier. An app without one gets an alert pointing at the command editor instead.
+    static func chooseApplication(completion: @escaping (String) -> Void) {
+        // An Open panel limited to app bundles, starting in the Applications folder.
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.applicationBundle]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
+        panel.message = localized("Choose the app to open.")
+        panel.prompt = localized("Choose")
+        let handler: (NSApplication.ModalResponse) -> Void = { response in
+            guard response == .OK, let url = panel.url else { return }
+            // `open -b` needs an identifier; explain the `open -a` alternative when there is none.
+            guard let identifier = Bundle(url: url)?.bundleIdentifier, !identifier.isEmpty else {
+                let alert = NSAlert()
+                alert.alertStyle = .warning
+                alert.messageText = localized("This app has no bundle identifier")
+                alert.informativeText = localized("Use Run a command with “open -a” and the app's path instead.")
+                alert.addButton(withTitle: localized("OK"))
+                alert.runModal()
+                return
+            }
+            completion(identifier)
+        }
+        // Attach the panel to the key window as a sheet when there is one.
+        if let window = NSApp.keyWindow {
+            panel.beginSheetModal(for: window, completionHandler: handler)
+        } else {
+            // No key window: run the panel as a standalone modal.
+            handler(panel.runModal())
+        }
+    }
+
+    // runningApplications(): Ordinary running apps (those with a Dock tile) that have a bundle
+    // identifier, sorted by name for the quick pick list.
+    static func runningApplications() -> [(name: String, identifier: String, icon: NSImage)] {
+        NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .compactMap { application in
+                guard let identifier = application.bundleIdentifier, let name = application.localizedName else { return nil }
+                let icon = application.icon ?? NSWorkspace.shared.icon(for: .applicationBundle)
+                return (name, identifier, icon)
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+}
