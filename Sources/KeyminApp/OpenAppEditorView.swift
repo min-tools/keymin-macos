@@ -125,3 +125,31 @@ struct MenuButton: View {
         }
     }
 }
+
+/// Lists running apps with their icons and offers the Open panel for any other app. Reports the
+/// chosen app's bundle identifier, which is what `open -b` needs.
+struct AppChooserMenu: View {
+    let title: String
+    /// Receives the bundle identifier of the chosen app.
+    let onPick: (String) -> Void
+
+    var body: some View {
+        MenuButton(title: title) {
+            var entries: [PopUpMenuEntry] = [.header(localized("Running apps"))]
+            for application in AppResolver.runningApplications() {
+                entries.append(.item(application.name, image: Self.menuIcon(application.icon)) { onPick(application.identifier) })
+            }
+            entries.append(.separator)
+            entries.append(.item(localized("Choose Application…")) { AppResolver.chooseApplication(completion: onPick) })
+            return entries
+        }
+    }
+
+    // menuIcon(icon): Size a copy for a 16-point menu row; fall back to the supplied
+    // image if copying does not return an NSImage.
+    static func menuIcon(_ icon: NSImage) -> NSImage {
+        let copy = icon.copy() as? NSImage ?? icon
+        copy.size = NSSize(width: 16, height: 16)
+        return copy
+    }
+}
