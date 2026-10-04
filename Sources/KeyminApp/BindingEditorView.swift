@@ -2,6 +2,81 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+// MARK: - Key picker
+
+/// A menu of every key skhd can name, grouped the way people look for them.
+struct KeyPickerMenu: View {
+    let key: SkhdKey
+    let onPick: (SkhdKey) -> Void
+
+    private static let letters = Array("abcdefghijklmnopqrstuvwxyz")
+    private static let digits = Array("0123456789")
+
+    // isFunctionKey(literal): Whether the keyword is `f1` through `f20`, which get their own
+    // submenu.
+    private static func isFunctionKey(_ literal: SkhdLiteralKey) -> Bool {
+        literal.keyword.hasPrefix("f") && literal.keyword.dropFirst().allSatisfy(\.isNumber)
+    }
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: Theme.radius, style: .continuous) }
+
+    var body: some View {
+        PopUpMenuButton(accessibilityLabel: localized("Key") + ": " + key.label) {
+            HStack(spacing: 8) {
+                PhysicalKeyCap(text: key.capLabel, size: 12, emphasized: true)
+                Text(key.label)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Theme.textPrimary)
+                Text(key.source)
+                    .font(Theme.mono(11))
+                    .foregroundStyle(Theme.textTertiary)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            .padding(.horizontal, 10)
+            .frame(height: Theme.controlHeight)
+            .background(Theme.surfaceRaised, in: shape)
+            .overlay(shape.stroke(Theme.borderStrong, lineWidth: 1))
+        } entries: {
+            entries
+        }
+    }
+
+    /// The submenus: characters, then keywords split into named, function, and media keys, then
+    /// the keys that only have a key code, and finally a way to enter any code by hand.
+    private var entries: [PopUpMenuEntry] {
+        [
+            .submenu(localized("Letters"), Self.letters.map { letter in
+                .item(String(letter).uppercased()) { onPick(.character(letter)) }
+            }),
+            .submenu(localized("Digits"), Self.digits.map { digit in
+                .item(String(digit)) { onPick(.character(digit)) }
+            }),
+            .submenu(localized("Named keys"), SkhdLiteralKey.all.filter { $0.kind != .media && !Self.isFunctionKey($0) }.map { literal in
+                .item(literal.title + (literal.symbol.map { "  " + $0 } ?? "")) { onPick(.literal(literal.keyword)) }
+            }),
+            .submenu(localized("Function keys"), SkhdLiteralKey.all.filter(Self.isFunctionKey).map { literal in
+                .item(literal.title) { onPick(.literal(literal.keyword)) }
+            }),
+            .submenu(localized("Media keys"), SkhdLiteralKey.all.filter { $0.kind == .media }.map { literal in
+                .item(literal.title) { onPick(.literal(literal.keyword)) }
+            }),
+            .submenu(localized("Punctuation and keypad"), SkhdKeyCodes.labels.sorted { $0.key < $1.key }.map { code, label in
+                .item(label + "  " + SkhdKeyCodes.source(for: code)) { onPick(.code(code)) }
+            }),
+            .separator,
+            // Switch to the code form, starting from the current key's code when it is known; the
+            // hex field in the editor then takes the typed value. Already a code: nothing to do.
+            .item(localized("Other key code…")) {
+                // The existing hex field already handles this selection.
+                if case .code = key { return }
+                onPick(.code(key.resolvedKeyCode ?? 0x00))
+            },
+        ]
+    }
+}
+
 // MARK: - Per-app commands
 
 /// Rows for `[ "App" : command ]` lists, with a pick list of running apps.
