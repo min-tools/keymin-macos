@@ -153,3 +153,61 @@ struct AppChooserMenu: View {
         return copy
     }
 }
+
+/// The simple action editor: pick an app, and the binding runs `open -b` for it.
+struct OpenAppEditorView: View {
+    /// The binding's current command, which may be anything the user typed earlier.
+    let command: String
+    let onChange: (String) -> Void
+
+    /// Nil when the command is not a plain open-app command.
+    private var parsed: OpenAppCommand? { OpenAppCommand.parse(command) }
+    private var resolved: ResolvedApp? { parsed.map(AppResolver.resolve) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 14) {
+                Image(nsImage: resolved?.icon ?? NSWorkspace.shared.icon(for: .applicationBundle))
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 44, height: 44)
+                    .opacity(resolved == nil ? 0.5 : 1)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(resolved?.title ?? localized("No app chosen yet"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    // Under the name: the identifier, path, or status of an open-app command;
+                    // for any other command, the raw command, so nothing is hidden.
+                    if let subtitle = resolved?.subtitle ?? (command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : localizedFormat("Current command: %@", command)) {
+                        Text(subtitle)
+                            .font(Theme.mono(11.5))
+                            .foregroundStyle(resolved?.isInstalled == false ? Theme.warning : Theme.textSecondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                Spacer(minLength: 12)
+                AppChooserMenu(title: resolved == nil ? "Choose App" : "Change App") { identifier in
+                    onChange(OpenAppCommand.command(opening: identifier))
+                }
+            }
+            .padding(14)
+            .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.border, lineWidth: 1))
+
+            // Once an app is chosen, show the exact command the shortcut runs.
+            if parsed != nil {
+                Text(localizedFormat("Runs: %@", command))
+                    .font(Theme.mono(11.5))
+                    .foregroundStyle(Theme.textTertiary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .textSelection(.enabled)
+            }
+            Text(localized("The shortcut brings the app to the front, or launches it when it is not running. Switch to Run a command when the app needs arguments."))
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
