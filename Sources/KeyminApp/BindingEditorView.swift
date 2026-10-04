@@ -2,6 +2,65 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// One per-app row: the app name (or the wildcard label), the run-or-pass-through choice, and
+/// the command field when the row runs one.
+private struct ProcessMappingRow: View {
+    let mapping: SkhdProcessMapping
+    let onChange: (SkhdProcessMapping) -> Void
+    /// Nil for the wildcard row, which has no remove button.
+    let onRemove: (() -> Void)?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                // The wildcard has a fixed label instead of a name field.
+                if mapping.isWildcard {
+                    Text(localized("Other apps"))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Theme.textPrimary)
+                        .frame(width: 200, alignment: .leading)
+                } else {
+                    // Named apps get a text field plus a pick list of running apps.
+                    InputField(placeholder: "App name", text: Binding(
+                        get: { mapping.process ?? "" },
+                        set: { name in var updated = mapping; updated.process = name; onChange(updated) }
+                    ))
+                    .frame(width: 200)
+                    AppNameMenu { name in
+                        var updated = mapping
+                        updated.process = name
+                        onChange(updated)
+                    }
+                }
+                // Pass through stores no command, written as `~`; switching back starts empty.
+                SegmentedControl(options: ["Run command", "Pass through"], selection: Binding(
+                    get: { mapping.isUnbound ? 1 : 0 },
+                    set: { index in
+                        var updated = mapping
+                        updated.command = index == 1 ? nil : (mapping.command ?? "")
+                        onChange(updated)
+                    }
+                ))
+                Spacer(minLength: 0)
+                // Only named rows can be removed here.
+                if let onRemove {
+                    IconButton(symbol: "minus", help: "Remove app", action: onRemove)
+                }
+            }
+            // The command field exists only while the row runs a command.
+            if let command = mapping.command {
+                CodeField(text: Binding(
+                    get: { command },
+                    set: { text in var updated = mapping; updated.command = text; onChange(updated) }
+                ), placeholder: localized("Command for this app"), minHeight: 44, maxHeight: 160)
+            }
+        }
+        .padding(12)
+        .background(Theme.surfaceSunken, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).stroke(Theme.border, lineWidth: 1))
+    }
+}
+
 /// A compact pick list of running apps by display name, with an Open panel for any other app
 /// bundle. Used wherever skhd wants an app's name: per-app lists and the blacklist.
 struct AppNameMenu: View {
