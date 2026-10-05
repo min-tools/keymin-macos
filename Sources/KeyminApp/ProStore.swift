@@ -444,6 +444,63 @@ private struct StoreFailure: LocalizedError {
     var errorDescription: String? { message }
 }
 
+/// The window behind the Pro panel. One exists while the panel is open, and it follows the
+/// height of its SwiftUI content as the store state changes.
+@MainActor
+private final class KeyminProPanelController: NSWindowController, NSWindowDelegate {
+    private static let panelWidth: CGFloat = 556
+
+    /// Called when the window closes so the store can forget this controller.
+    var onClose: (() -> Void)?
+
+    // init(store, feature): Build and size the Pro window for this store.
+    // A nil feature shows the general purchase explanation.
+    init(store: KeyminProStore, feature: KeyminProFeature?) {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: Self.panelWidth, height: 560),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = localized("Keymin Pro")
+        window.isReleasedWhenClosed = false
+        super.init(window: window)
+        window.delegate = self
+        // The view reports its laid-out height through the resize callback.
+        window.contentView = NSHostingView(rootView: KeyminProView(
+            store: store,
+            feature: feature,
+            state: KeyminPaywallState(),
+            resize: { [weak self] height in self?.fitWindow(to: height) }
+        ))
+        window.contentView?.layoutSubtreeIfNeeded()
+        // Fit the first layout before the window appears, so it does not animate open.
+        if let height = window.contentView?.fittingSize.height, height > 0 {
+            fitWindow(to: height, animate: false)
+        }
+        window.center()
+    }
+
+    // init(coder): Unsupported; the panel is never loaded from a storyboard.
+    required init?(coder: NSCoder) { nil }
+
+    // windowWillClose(notification): Let the store release this controller.
+    func windowWillClose(_ notification: Notification) { onClose?() }
+
+    // fitWindow(to height, [animate = true]): Match the content's height in points,
+    // keeping the panel's top edge fixed as its store state changes.
+    private func fitWindow(to height: CGFloat, animate: Bool = true) {
+        guard let window, height > 0 else { return }
+        let size = NSSize(width: Self.panelWidth, height: ceil(height))
+        var frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: size))
+        let current = window.frame
+        guard abs(current.height - frame.height) >= 1 || abs(current.width - frame.width) >= 1 else { return }
+        // Keep the top-left corner in place so the panel grows and shrinks downward.
+        frame.origin = NSPoint(x: current.minX, y: current.maxY - frame.height)
+        window.setFrame(frame, display: true, animate: animate && window.isVisible)
+    }
+}
+
 /// Progress and message state shared by the purchase and restore actions, so only one runs at a
 /// time and both report into the same place.
 @MainActor
