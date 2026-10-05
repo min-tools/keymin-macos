@@ -443,3 +443,219 @@ private struct StoreFailure: LocalizedError {
     init(_ message: String) { self.message = message }
     var errorDescription: String? { message }
 }
+
+/// Progress and message state shared by the purchase and restore actions, so only one runs at a
+/// time and both report into the same place.
+@MainActor
+private final class KeyminPaywallState: ObservableObject {
+    enum Operation { case purchasing, restoring }
+    @Published var operation: Operation?
+    @Published var message: String?
+
+    /// The label shown while an action is running.
+    var progressText: String? {
+        switch operation {
+        case .purchasing: return localized("Contacting the App Store…")
+        case .restoring: return localized("Restoring…")
+        case nil: return nil
+        }
+    }
+}
+
+/// Carries the Pro view's measured height up to the window controller.
+private struct KeyminProPanelHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    // reduce(value, nextValue): Keep the tallest reported height.
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// The Pro panel's content: access status, purchase and restore actions, and the legal links.
+private struct KeyminProView: View {
+    @ObservedObject var store: KeyminProStore
+    let feature: KeyminProFeature?
+    @ObservedObject var state: KeyminPaywallState
+    let resize: (CGFloat) -> Void
+
+    /// True while products load or an action runs; every action is disabled then.
+    private var isWorking: Bool { store.isLoading || state.operation != nil }
+    private var progressText: String? {
+        state.progressText ?? (store.isLoading ? localized("Loading App Store products…") : nil)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // The lead names the feature that opened the panel when there is one.
+            VStack(alignment: .leading, spacing: 6) {
+                Text(localized("Keymin Pro"))
+                    .font(.system(size: 22, weight: .bold))
+                Text(feature.map { localizedFormat("Unlock %@ and the rest of Keymin Pro.", localized($0.rawValue)) }
+                     ?? localized("Edit every binding and use the Source page. Pay yearly, or once for lifetime access."))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                statusSection
+                // One progress row replaces the purchase buttons while anything is running.
+                if let progressText {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text(progressText)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                } else if !store.isPro {
+                    // Trial and Free users can purchase once the panel is idle.
+                    purchaseButtons
+                }
+                // Errors and the pending-approval note appear under the actions.
+                if let message = state.message {
+                    Text(localized(message))
+                        .font(.system(size: 12))
+                        .foregroundStyle(.red)
+                }
+            }
+
+            // Restore is offered until a purchase is verified.
+            if !store.isPro {
+                Button(localized("Restore Purchases")) { restore() }
+                    .disabled(isWorking)
+                    .buttonStyle(.link)
+                    .keyboardFocusable()
+            }
+
+            // Keep legal links beside the close action in every store state.
+            HStack {
+                HStack(spacing: 16) {
+                    Link(localized("Terms of Use (EULA)"), destination: AppLinks.termsOfUse)
+                        .keyboardFocusable()
+                    Link(localized("Privacy Policy"), destination: AppLinks.privacyPolicy)
+                        .keyboardFocusable()
+                }
+                .font(.system(size: 11))
+                .buttonStyle(.link)
+                Spacer()
+                Button(localized(store.isPro ? "OK" : "Close")) { NSApp.keyWindow?.close() }
+                    .disabled(isWorking)
+                    .keyboardFocusable()
+                    .controlSize(.large)
+                    .keyboardShortcut(store.isPro ? .defaultAction : .cancelAction)
+            }
+        }
+        .padding(.init(top: 22, leading: 28, bottom: 24, trailing: 28))
+        .frame(width: 556)
+        .fixedSize(horizontal: false, vertical: true)
+        // Report the laid-out height so the window can follow it, and load prices on appearance.
+        .background(
+            GeometryReader { geometry in
+                Color.clear.preference(key: KeyminProPanelHeightKey.self, value: geometry.size.height)
+            }
+        )
+        .onPreferenceChange(KeyminProPanelHeightKey.self, perform: resize)
+        .task { await load() }
+    }
+
+    @ViewBuilder private var statusSection: some View {
+        // Distinguish the free trial from a verified Pro purchase.
+        if store.isPro || store.isAppTrialActive {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(store.isAppTrialActive
+                     ? localized("Your Pro trial is active.")
+                     : localized("You have Keymin Pro."))
+                    .font(.system(size: 13))
+                Text(localized(store.statusText))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+            // Subscriptions are managed in the App Store, not inside the app.
+            if store.isPro && store.entitlement.kind == .subscription {
+                Button(localized("Manage Subscription")) {
+                    NSWorkspace.shared.open(KeyminProStore.manageSubscriptionsURL)
+                }
+                    .buttonStyle(.link)
+                    .keyboardFocusable()
+            }
+        } else {
+            // Free after the trial: the status line names the binding limit.
+            Text(localized(store.statusText))
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder private var purchaseButtons: some View {
+        // Yearly is the prominent choice, with its price under the button.
+        if let yearly = store.yearly {
+            Button { buy(yearly) } label: {
+                Text(localized("Keymin Pro Yearly"))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .keyboardFocusable()
+            .controlSize(.large)
+            Text(localizedFormat("%@ per year", yearly.displayPrice))
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
+        // Lifetime is the secondary choice and shows its price inline.
+        if let lifetime = store.lifetime {
+            Button { buy(lifetime) } label: {
+                Text(localizedFormat("Keymin Pro Lifetime · %@", lifetime.displayPrice))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .keyboardFocusable()
+            .controlSize(.large)
+        }
+        // Without products, explain why and offer another load.
+        if store.yearly == nil && store.lifetime == nil {
+            Text(localized(store.storeError ?? "Purchases are unavailable right now."))
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            Button(localized("Try Again")) { Task { await load() } }
+                .keyboardFocusable()
+        }
+        // The auto-renewal terms must sit beside the purchase buttons.
+        Text(localized("Payment is charged to your Apple Account. The yearly subscription renews automatically unless you cancel it in App Store settings at least a day before the current period ends."))
+            .font(.system(size: 11))
+            .foregroundStyle(.tertiary)
+    }
+
+    // load(): Load the products, unless they are already loading or an action is running.
+    private func load() async {
+        guard !isWorking else { return }
+        await store.refreshProducts()
+    }
+
+    // buy(product): Show purchase progress until success, cancellation, pending, or failure.
+    private func buy(_ product: Product) {
+        guard !isWorking else { return }
+        state.operation = .purchasing
+        state.message = nil
+        Task {
+            defer { state.operation = nil }
+            do {
+                let outcome = try await store.purchase(product, confirmIn: NSApp.keyWindow)
+                // Pending means an approval is outstanding; nothing unlocks yet.
+                if outcome == .pending { state.message = localized("The purchase is awaiting approval.") }
+            } catch { state.message = error.localizedDescription }
+        }
+    }
+
+    // restore(): Restore purchases under their own progress label, unless the panel is busy.
+    private func restore() {
+        guard !isWorking else { return }
+        state.operation = .restoring
+        state.message = nil
+        Task {
+            defer { state.operation = nil }
+            do {
+                // A sync that finds no purchase is reported, not treated as an error.
+                if try await !store.restore() { state.message = localized("No Keymin Pro purchase was found for this Apple Account.") }
+            } catch { state.message = error.localizedDescription }
+        }
+    }
+}
