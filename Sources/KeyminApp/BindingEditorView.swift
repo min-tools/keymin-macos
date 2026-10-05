@@ -2,6 +2,51 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+private extension SkhdHotkey {
+    /// The first command found in the current action, reused when the action type changes.
+    var actionSummaryCommand: String {
+        switch action {
+        case .command(let command): return command
+        case .processMap(let mappings): return mappings.compactMap(\.command).first ?? ""
+        case .activateMode: return ""
+        }
+    }
+}
+
+/// The last value the binding editor saw for each action type; a type stays nil until the binding
+/// has used it in this editor.
+private struct ActionMemory {
+    var command: String?
+    var mappings: [SkhdProcessMapping]?
+    var mode: String?
+
+    // remember(action): Store the action's value under its own type, replacing the older one.
+    mutating func remember(_ action: SkhdAction) {
+        switch action {
+        case .command(let value): command = value
+        case .processMap(let value): mappings = value
+        case .activateMode(let value): mode = value
+        }
+    }
+
+    /// The remembered command, or nil when there is none or it is blank, so the first command of
+    /// another type can be carried over instead.
+    var filledCommand: String? {
+        command.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+    }
+
+    /// The remembered per-app list, or nil when there is none or no row has an app name or a
+    /// command yet, so a fresh list can carry the first command over instead.
+    var filledMappings: [SkhdProcessMapping]? {
+        // A row counts once it names an app or holds a command that is not blank.
+        let filled = mappings?.contains { mapping in
+            !(mapping.process ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+                || !(mapping.command ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        } ?? false
+        return filled ? mappings : nil
+    }
+}
+
 // MARK: - Key picker
 
 /// A menu of every key skhd can name, grouped the way people look for them.
@@ -265,5 +310,14 @@ struct AppNameMenu: View {
             // No key window: run the panel as a standalone modal.
             handler(panel.runModal())
         }
+    }
+}
+
+private extension SkhdHotkey {
+    /// Whether the command only opens an app, which the simple editor can show.
+    var opensApp: Bool {
+        // Only a plain command can be represented by the simple app picker.
+        if case .command(let command) = action { return OpenAppCommand.parse(command) != nil }
+        return false
     }
 }
