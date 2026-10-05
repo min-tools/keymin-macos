@@ -35,6 +35,52 @@ private struct PageFrame<Content: View>: View {
     }
 }
 
+// MARK: - Modes
+
+/// The Modes page: one card per declared mode and a button to add another.
+struct ModesEditorView: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        PageFrame(
+            symbol: "square.stack.3d.up",
+            title: "Modes",
+            summary: "Modes group shortcuts into layers. Switching modes activates that layer's bindings."
+        ) {
+            // Explain what a mode is while there is none to show.
+            if model.modes.isEmpty {
+                NoticeCard(
+                    tone: .neutral,
+                    symbol: "info.circle",
+                    title: localized("No modes are declared."),
+                    detail: localized("Add a mode for another layer of shortcuts, such as a resize mode that you enter with a hotkey and leave with Escape.")
+                )
+            }
+            // Cards are keyed by declaration ID so a card's name draft follows its mode.
+            ForEach(model.modes) { mode in
+                ModeCard(model: model, mode: mode)
+                    .id(mode.id)
+            }
+            // Adds a declaration named modeN, with the next free number, after the existing
+            // declarations or, when there are none, above the first binding.
+            Button {
+                model.addMode()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                    Text(localized("Add Mode"))
+                }
+            }
+            .buttonStyle(.keymin(.secondary))
+            .keyboardFocusable()
+            Text(localized("Modes are written as “:: name” and must appear before the bindings that use them. Keymin adds a new declaration after the existing ones, or above the first binding."))
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 /// One mode's card: the name with an explicit Rename step, its binding count, the capture
 /// switch, the entry command, and any problems with the declaration.
 private struct ModeCard: View {
