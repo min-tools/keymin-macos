@@ -277,3 +277,65 @@ struct BlacklistEditorView: View {
         }
     }
 }
+
+/// One .load directive: the path field, an Open panel, and removal. The field holds its own draft,
+/// which changes the file only when Return, Apply, or Choose commits it, so a half-typed path
+/// never reaches the file. A path the model refuses stays visible with the reason under it, while
+/// the file keeps its current path.
+private struct IncludeRow: View {
+    @ObservedObject var model: AppModel
+    let directive: SkhdLoadDirective
+    /// Shows the Open panel and passes the chosen path to its completion.
+    let choose: (@escaping (String) -> Void) -> Void
+    /// The path in the field, seeded from the directive.
+    @State private var draft: String
+
+    // init(model, directive, choose): Seed the draft from the directive's path.
+    init(model: AppModel, directive: SkhdLoadDirective, choose: @escaping (@escaping (String) -> Void) -> Void) {
+        self.model = model
+        self.directive = directive
+        self.choose = choose
+        _draft = State(initialValue: directive.path)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                InputField(placeholder: "path/to/file", text: $draft, mono: true, onSubmit: { commit(draft) })
+                Button(localized("Choose")) { choose { commit($0) } }
+                    .buttonStyle(.keymin(.secondary, size: .small))
+                    .keyboardFocusable()
+                IconButton(symbol: "minus", help: "Remove file") { model.removeInclude(directive.id) }
+            }
+            // The model's reason for refusing the path in the field, which also flags a path
+            // the file already had.
+            if let problem = model.includeProblem(for: draft) {
+                FieldProblem(message: problem)
+            }
+            // A typed path waits for an explicit step, like a mode's new name.
+            if draft != directive.path {
+                HStack(spacing: 10) {
+                    Button(localized("Apply")) { commit(draft) }
+                        .buttonStyle(.keymin(.primary, size: .small))
+                        .keyboardFocusable()
+                    Text(localizedFormat("The file keeps “%@” until you apply the new path.", directive.path))
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+        }
+    }
+
+    // commit(path): Show a typed or chosen path in the field and pass it to the model, which
+    // applies it only when it accepts it. A refused path beeps and stays in the field with its
+    // reason.
+    private func commit(_ path: String) {
+        draft = path
+        // The model's reason is already shown under the field.
+        if model.includeProblem(for: path) != nil {
+            NSSound.beep()
+            return
+        }
+        model.updateInclude(directive.id, path: path)
+    }
+}
