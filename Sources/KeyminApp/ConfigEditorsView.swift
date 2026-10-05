@@ -472,3 +472,83 @@ private struct IncludeRow: View {
         model.updateInclude(directive.id, path: path)
     }
 }
+
+// MARK: - Source
+
+/// The Source page: the file text in a code editor, applied back to the document on demand.
+struct SourceEditorView: View {
+    @ObservedObject var model: AppModel
+
+    /// Whether the editor holds edits that have not been applied yet.
+    private var draftDiffers: Bool { model.hasUnappliedSourceEdits }
+
+    var body: some View {
+        // The source shows every binding, so it belongs to Pro once the trial has ended.
+        if model.isLimitedToFreeBindings {
+            VStack(spacing: 16) {
+                IconTile(symbol: "lock.fill", size: 64, tint: Theme.warning)
+                Text(localized("The Source page needs Keymin Pro"))
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Text(localizedFormat("Source editing gives access to the whole file. Without Pro, use the forms to edit the first %lld bindings. Hidden bindings stay in the file.", Int64(KeyminFreeAccessPolicy.freeBindingLimit)))
+                    .font(.system(size: 13.5))
+                    .foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+                Button(localized("Keymin Pro")) { model.presentPro(for: .sourceEditing) }
+                    .buttonStyle(.keymin(.primary))
+                    .keyboardFocusable()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            // Full access: the editor itself.
+            editor
+        }
+    }
+
+    private var editor: some View {
+        VStack(spacing: 0) {
+            // Toolbar: heading, the last parse error, and the Discard and Apply buttons.
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localized("Source"))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(localized("The exact text Keymin writes. Edit it here for anything the forms cannot express, then apply it."))
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Spacer()
+                // The error from the last Apply. A clean Apply or any draft refresh, such as
+                // Discard Edits, clears it.
+                if let error = model.sourceDraftError {
+                    Text(error)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.danger)
+                        .lineLimit(2)
+                        .frame(maxWidth: 320, alignment: .trailing)
+                }
+                Button(localized("Discard Edits")) { model.refreshSourceDraft() }
+                    .buttonStyle(.keymin(.secondary))
+                    .keyboardFocusable()
+                    .disabled(!draftDiffers)
+                Button(localized("Apply")) { model.applySourceDraft() }
+                    .buttonStyle(.keymin(.primary))
+                    .keyboardFocusable()
+                    .disabled(!draftDiffers)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+            Rectangle().fill(Theme.border).frame(height: 1)
+            // The editor binds straight to the draft. Apply, Save, leaving the page, or any other
+            // change to the document applies unapplied text; without any, the draft follows the
+            // document.
+            CodeTextView(text: $model.sourceDraft, placeholder: localized("# Empty configuration"), minHeight: 200, fontSize: 12.5, highlightsSkhd: true, showsLineNumbers: true)
+                .background(Theme.surfaceSunken)
+        }
+        .onAppear {
+            // Refresh a clean draft; keep unapplied text across page appearances.
+            if !draftDiffers { model.refreshSourceDraft() }
+        }
+    }
+}
