@@ -35,6 +35,118 @@ private struct PageFrame<Content: View>: View {
     }
 }
 
+/// One mode's card: the name with an explicit Rename step, its binding count, the capture
+/// switch, the entry command, and any problems with the declaration.
+private struct ModeCard: View {
+    @ObservedObject var model: AppModel
+    /// The declaration as passed in; `current` is the live one.
+    let mode: SkhdModeDeclaration
+    /// The name field's text. Typing changes nothing until Rename or Return confirms it.
+    @State private var nameDraft: String
+    /// The trimmed name the model last refused. Its reason shows under the field while the draft
+    /// still holds that name.
+    @State private var refusedName: String?
+
+    // init(model, mode): Seed the name draft from the declaration.
+    init(model: AppModel, mode: SkhdModeDeclaration) {
+        self.model = model
+        self.mode = mode
+        _nameDraft = State(initialValue: mode.name)
+    }
+
+    /// The declaration as the model has it now, or the passed-in copy once it was removed.
+    private var current: SkhdModeDeclaration {
+        model.modes.first { $0.id == mode.id } ?? mode
+    }
+
+    /// The draft without surrounding spaces, which is the name a rename would use.
+    private var trimmedDraft: String {
+        nameDraft.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Why the model refused the name in the field, or nil while the draft holds another name.
+    private var renameProblem: String? {
+        guard let refusedName, refusedName == trimmedDraft else { return nil }
+        return model.renameProblem(for: current.id, to: refusedName)
+    }
+
+    /// Bindings in this mode. Bindings without a mode belong to the default mode.
+    private var bindingCount: Int {
+        model.document.hotkeys.filter { $0.modes.contains(current.name) || (current.name == "default" && $0.modes.isEmpty) }.count
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                InputField(placeholder: "Mode name", text: $nameDraft, mono: true, onSubmit: commitName)
+                    .frame(width: 220)
+                Chip(text: bindingCountText(bindingCount), mono: false, compact: true)
+                Spacer()
+                IconButton(symbol: "trash", help: "Remove mode", variant: .danger) { model.removeMode(current.id) }
+            }
+            // A refused rename explains itself under the name field.
+            if let renameProblem {
+                FieldProblem(message: renameProblem)
+            }
+            // Renaming is a deliberate step because it rewrites every binding that uses the mode.
+            // Surrounding spaces are not part of the name, so they alone do not offer it.
+            if trimmedDraft != current.name {
+                HStack(spacing: 10) {
+                    Button(localized("Rename")) { commitName() }
+                        .buttonStyle(.keymin(.primary, size: .small))
+                        .keyboardFocusable()
+                    Text(localized("Bindings in this mode and bindings that switch to it are updated too."))
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+            // The capture flag, written as @ after the name.
+            CheckRow(
+                title: "Capture every keypress while active",
+                subtitle: "Written as “@”. Keys without a binding in this mode are swallowed instead of reaching the app.",
+                isOn: Binding(get: { current.capture }, set: { value in var updated = current; updated.capture = value; model.update(updated) })
+            )
+            // The optional entry command; clearing the field removes it from the declaration.
+            VStack(alignment: .leading, spacing: 8) {
+                Text(localized("Command to run when the mode is entered"))
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(Theme.textSecondary)
+                CodeField(text: Binding(
+                    get: { current.command ?? "" },
+                    set: { text in
+                        var updated = current
+                        updated.command = text.isEmpty ? nil : text
+                        model.update(updated)
+                    }
+                ), placeholder: localized("Optional, for example a notification"), minHeight: 44, maxHeight: 120)
+            }
+            // Problems with this declaration: an invalid name or a duplicate.
+            let problems = model.diagnostics(for: current.id)
+            ForEach(problems) { diagnostic in
+                NoticeCard(tone: .negative, symbol: "xmark.octagon.fill", title: diagnostic.message)
+            }
+        }
+        .card(padding: 20)
+    }
+
+    // commitName(): Rename the mode to the trimmed draft when the model accepts the name, then
+    // show the name as stored. A refused name beeps, keeps the draft, and shows the model's
+    // reason under the field.
+    private func commitName() {
+        let name = trimmedDraft
+        // The model decides which names are valid and free; its reason stays visible.
+        if model.renameProblem(for: current.id, to: name) != nil {
+            refusedName = name
+            NSSound.beep()
+            return
+        }
+        refusedName = nil
+        model.renameMode(current.id, to: name)
+        // Drop surrounding spaces from the field once the mode carries the name.
+        if current.name == name { nameDraft = name }
+    }
+}
+
 /// The reason a typed name or path was refused, in red under its field.
 private struct FieldProblem: View {
     let message: String
