@@ -82,3 +82,95 @@ final class AfterSavePreferences: ObservableObject {
         if let url = URL(string: "shortcuts://") { NSWorkspace.shared.open(url) }
     }
 }
+
+/// The After Saving page: explains skhd's own reload and offers the Shortcuts hook.
+struct AfterSaveEditorView: View {
+    @ObservedObject var model: AppModel
+    @ObservedObject private var preferences: AfterSavePreferences
+
+    // init(model): Observe the model's after-save preferences directly so this page refreshes
+    // when they change.
+    init(model: AppModel) {
+        self.model = model
+        _preferences = ObservedObject(wrappedValue: model.afterSave)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // Header, laid out like the other configuration pages.
+                HStack(spacing: 18) {
+                    IconTile(symbol: "arrow.triangle.2.circlepath", size: 60)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(localized("After Saving"))
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundStyle(Theme.textPrimary)
+                        Text(localized("With hot loading enabled, skhd applies saved changes automatically. To restart it or run another action after saving, choose a Shortcuts shortcut."))
+                            .font(.system(size: 15))
+                            .foregroundStyle(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                // Enabling this reveals the shortcut settings below.
+                ToggleCard(
+                    title: "Run a shortcut after every save",
+                    subtitle: "Pass the saved file's path to a shortcut in the Shortcuts app.",
+                    isOn: $preferences.runsShortcut
+                )
+
+                // The name field, a test run, and a way into the Shortcuts app.
+                if preferences.runsShortcut {
+                    VStack(alignment: .leading, spacing: 14) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(localized("Shortcut name"))
+                                .font(.system(size: 12.5, weight: .medium))
+                                .foregroundStyle(Theme.textSecondary)
+                            HStack(spacing: 10) {
+                                InputField(placeholder: "Restart skhd", text: $preferences.shortcutName, onSubmit: runNow)
+                                    .frame(width: 320)
+                                Button(localized("Run Now")) { runNow() }
+                                    .buttonStyle(.keymin(.secondary, size: .small))
+                                    .keyboardFocusable()
+                                    .disabled(preferences.trimmedName.isEmpty)
+                                Button(localized("Open Shortcuts")) { AfterSavePreferences.openShortcutsApp() }
+                                    .buttonStyle(.keymin(.secondary, size: .small))
+                                    .keyboardFocusable()
+                            }
+                            // The note from the last run, whether after a save or from Run Now.
+                            if let result = preferences.lastResult {
+                                Text(result)
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                        }
+                        Text(localized("Use the exact shortcut name. Keymin cannot check the result; add a Show Notification action in Shortcuts to confirm it ran."))
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .card(padding: 20)
+                }
+
+                // A recipe for the common case, since the sandbox keeps Keymin from restarting
+                // skhd itself.
+                NoticeCard(
+                    tone: .neutral,
+                    symbol: "info.circle",
+                    title: localized("Restart skhd with Shortcuts"),
+                    detail: localized("Create “Restart skhd” in Shortcuts. Add a Run Shell Script action with “skhd --restart-service”, using the full path to skhd. Shortcuts does not load your shell profile. Enable Allow Running Scripts in Shortcuts → Settings → Advanced.")
+                )
+            }
+            .padding(.horizontal, 40)
+            .padding(.top, 36)
+            .padding(.bottom, 40)
+            .frame(maxWidth: 980, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+    }
+
+    // runNow(): Run the shortcut right away with the current file's path, as a save would.
+    private func runNow() {
+        preferences.run(path: model.store.location?.resolvedURL.path)
+    }
+}
