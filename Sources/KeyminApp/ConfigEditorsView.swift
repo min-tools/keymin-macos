@@ -278,6 +278,139 @@ struct BlacklistEditorView: View {
     }
 }
 
+// MARK: - Included files
+
+/// The Included Files page: one row per .load directive, with an Open panel to pick a file.
+struct IncludesEditorView: View {
+    @ObservedObject var model: AppModel
+    /// The path in the row that Add Path opens, or nil while that row is closed. The model
+    /// refuses empty paths, so the row joins the file only once its path is added.
+    @State private var newPath: String?
+    /// The path the model last refused for the new row. Its reason shows under the row while
+    /// the row still holds that path.
+    @State private var refusedNewPath: String?
+
+    var body: some View {
+        PageFrame(
+            symbol: "doc.on.doc",
+            title: "Included Files",
+            summary: "skhd also reads these files, so a long configuration can be split into parts. Relative paths are resolved from the folder of the main file."
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                // One row per directive, keyed by its ID so the row's own path draft follows it.
+                ForEach(model.includes) { directive in
+                    IncludeRow(model: model, directive: directive, choose: choose)
+                }
+                // The row for a path that is not in the file yet.
+                if newPath != nil {
+                    newPathRow
+                }
+                // Empty state where the rows would be.
+                if model.includes.isEmpty && newPath == nil {
+                    Text(localized("No files are included."))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                // Add Path opens an empty row to type into; Add File picks one in the Open panel.
+                HStack(spacing: 10) {
+                    Button {
+                        // An open new row keeps what was typed into it.
+                        if newPath == nil { newPath = "" }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus")
+                            Text(localized("Add Path"))
+                        }
+                    }
+                    .buttonStyle(.keymin(.secondary, size: .small))
+                    .keyboardFocusable()
+                    Button(localized("Add File")) { choose { addPath($0, fromNewRow: false) } }
+                        .buttonStyle(.keymin(.secondary, size: .small))
+                        .keyboardFocusable()
+                }
+                .padding(.top, 4)
+            }
+            .card(padding: 20)
+            Text(localized("Written as “.load \"file\"”. Keymin edits only the main file; included files are not opened here."))
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textTertiary)
+        }
+    }
+
+    /// The new row: the path field, an Open panel, Add, and a button that closes the row. Return
+    /// in the field adds the path as well.
+    private var newPathRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                InputField(placeholder: "path/to/file", text: Binding(
+                    get: { newPath ?? "" },
+                    set: { newPath = $0 }
+                ), mono: true, onSubmit: { addPath(newPath ?? "", fromNewRow: true) })
+                Button(localized("Choose")) { choose { addPath($0, fromNewRow: true) } }
+                    .buttonStyle(.keymin(.secondary, size: .small))
+                    .keyboardFocusable()
+                Button(localized("Add")) { addPath(newPath ?? "", fromNewRow: true) }
+                    .buttonStyle(.keymin(.primary, size: .small))
+                    .keyboardFocusable()
+                IconButton(symbol: "minus", help: "Remove file") {
+                    newPath = nil
+                    refusedNewPath = nil
+                }
+            }
+            // A refused path explains itself until the row holds another one.
+            if let refusedNewPath, refusedNewPath == newPath, let problem = model.includeProblem(for: refusedNewPath) {
+                FieldProblem(message: problem)
+            }
+        }
+    }
+
+    // addPath(path, fromNewRow): Add a typed or chosen path as a new directive; a path from the
+    // new row closes that row. A path the model refuses goes into the new row, opening it when
+    // needed, with the reason under it.
+    private func addPath(_ path: String, fromNewRow: Bool) {
+        // Refused: keep the path in the new row so the user can see and correct it.
+        if model.includeProblem(for: path) != nil {
+            newPath = path
+            refusedNewPath = path
+            NSSound.beep()
+            return
+        }
+        model.addInclude(path)
+        // Only the new row's own path closes it; Add File leaves a half-typed row alone.
+        if fromNewRow {
+            newPath = nil
+            refusedNewPath = nil
+        }
+    }
+
+    // choose(completion): Show an Open panel for a file skhd should also read and pass its path
+    // to completion. Only the path is used; skhd reads the file, not Keymin.
+    private func choose(_ completion: @escaping (String) -> Void) {
+        // Files only, hidden ones included, starting in the main file's folder because relative
+        // paths resolve from there.
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.showsHiddenFiles = true
+        panel.directoryURL = model.store.location?.resolvedURL.deletingLastPathComponent() ?? ConfigStore.defaultDirectory
+        panel.message = localized("Choose a file skhd should also read.")
+        panel.prompt = localized("Choose")
+        // Both ways of running the panel share one result handler.
+        let handler: (NSApplication.ModalResponse) -> Void = { response in
+            guard response == .OK, let url = panel.url else { return }
+            completion(url.path)
+        }
+        // Attach the panel to the key window as a sheet when there is one.
+        if let window = NSApp.keyWindow {
+            panel.beginSheetModal(for: window, completionHandler: handler)
+        } else {
+            // No key window, so run the panel on its own.
+            handler(panel.runModal())
+        }
+    }
+}
+
 /// One .load directive: the path field, an Open panel, and removal. The field holds its own draft,
 /// which changes the file only when Return, Apply, or Choose commits it, so a half-typed path
 /// never reaches the file. A path the model refuses stays visible with the reason under it, while
