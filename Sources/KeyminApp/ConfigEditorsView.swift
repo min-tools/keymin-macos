@@ -207,3 +207,73 @@ private struct FieldProblem: View {
         .foregroundStyle(Theme.danger)
     }
 }
+
+// MARK: - Blacklist
+
+/// The Blacklist page: one row per app name, each with a picker of running apps.
+struct BlacklistEditorView: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        PageFrame(
+            symbol: "hand.raised",
+            title: "Blacklist",
+            summary: "skhd ignores every keypress while one of these apps is in front. Use it for terminals, virtual machines, and remote desktops that need the raw keys."
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                // Rows are keyed by position: names are plain strings that may repeat or be empty.
+                // A row's position can outlive a reload that shortens the list, for example while
+                // the Choose Application panel is open, so every write checks it first.
+                ForEach(Array(model.blacklist.enumerated()), id: \.offset) { index, name in
+                    HStack(spacing: 10) {
+                        InputField(placeholder: "App name", text: Binding(
+                            get: { name },
+                            set: { updated in
+                                var list = model.blacklist
+                                guard list.indices.contains(index) else { return }
+                                list[index] = updated
+                                model.setBlacklist(list)
+                            }
+                        ))
+                        .frame(width: 320)
+                        AppNameMenu { picked in
+                            var list = model.blacklist
+                            guard list.indices.contains(index) else { return }
+                            list[index] = picked
+                            model.setBlacklist(list)
+                        }
+                        Spacer()
+                        IconButton(symbol: "minus", help: "Remove app") {
+                            var list = model.blacklist
+                            guard list.indices.contains(index) else { return }
+                            list.remove(at: index)
+                            model.setBlacklist(list)
+                        }
+                    }
+                }
+                // Empty state where the rows would be.
+                if model.blacklist.isEmpty {
+                    Text(localized("No apps are blacklisted."))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                // A new row starts empty for the user to type or pick a name.
+                Button {
+                    model.setBlacklist(model.blacklist + [""])
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                        Text(localized("Add App"))
+                    }
+                }
+                .buttonStyle(.keymin(.secondary, size: .small))
+                .keyboardFocusable()
+                .padding(.top, 4)
+            }
+            .card(padding: 20)
+            Text(localized("Written as “.blacklist [ … ]”. skhd matches each name as shown in the menu bar, ignoring case."))
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textTertiary)
+        }
+    }
+}
