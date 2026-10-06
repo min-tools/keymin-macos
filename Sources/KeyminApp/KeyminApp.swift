@@ -209,3 +209,25 @@ final class KeyminAppDelegate: NSObject, NSApplicationDelegate {
         if alert.runModal() == .alertFirstButtonReturn { model.forgetAccess() }
     }
 }
+
+// Menus are declared through SwiftUI so they survive the menu rebuilds SwiftUI performs when
+// focus moves, which would drop items inserted through AppKit. Each group observes the model so
+// enabled states and checkmarks stay current.
+
+/// The window panels attach to as sheets; any window will do when none is key.
+private var keyWindow: NSWindow? { NSApp.keyWindow ?? NSApp.windows.first }
+
+/// The File menu's New Binding, Choose, and Create items, replacing the standard New group.
+private struct FileOpenCommands: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        Button(localized("New Binding")) { model.addBinding() }
+            .keyboardShortcut("n", modifiers: .command)
+            .disabled(!model.hasConfiguration)
+        Button(localized("Choose Configuration File…")) { model.chooseFile(in: keyWindow) }
+            .keyboardShortcut("o", modifiers: .command)
+        Button(localized("Create Configuration File…")) { model.createFile(in: keyWindow) }
+            .keyboardShortcut("n", modifiers: [.command, .shift])
+    }
+}
