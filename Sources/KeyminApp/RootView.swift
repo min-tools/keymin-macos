@@ -1,6 +1,101 @@
 import AppKit
 import SwiftUI
 
+/// The window's content: the sidebar, header, and current page once a file is loaded, or the
+/// welcome screen; the Pro access banner sits under either.
+struct RootView: View {
+    @ObservedObject var model: AppModel
+    @ObservedObject private var store: ConfigStore
+
+    // init(model): Observe the model and its store, so file changes redraw the view.
+    init(model: AppModel) {
+        self.model = model
+        _store = ObservedObject(wrappedValue: model.store)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // A loaded file gets the editor layout: sidebar left, header and page right.
+            if model.hasConfiguration {
+                HStack(spacing: 0) {
+                    SidebarView(model: model)
+                        .frame(width: 320)
+                    Rectangle().fill(Theme.border).frame(width: 1)
+                    VStack(spacing: 0) {
+                        HeaderBar(model: model)
+                        Rectangle().fill(Theme.border).frame(height: 1)
+                        // The banner sits between the header and the page.
+                        if model.externalChangePending {
+                            ExternalChangeBanner(model: model)
+                        }
+                        content
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+            } else {
+                // No file, a link awaiting access, or a read failure: the welcome screen explains.
+                WelcomeView(model: model)
+            }
+
+            KeyminAccessBanner()
+        }
+        .background(Theme.background)
+        // Invisible background views give the window its standard title bar and remembered frame.
+        .background(StandardWindowChrome())
+        .background(WindowFrameMemory(key: "KeyminEditorWindowFrame", restores: model.hasConfiguration))
+        .tint(Theme.accent)
+    }
+
+    @ViewBuilder private var content: some View {
+        switch model.page {
+        case .binding:
+            // The editor is keyed by binding id so switching bindings resets its field state.
+            if let binding = model.selectedBinding {
+                BindingEditorView(model: model, binding: binding)
+                    .id(binding.id)
+            } else if model.document.hotkeys.isEmpty {
+                // An empty file invites the first binding.
+                placeholder(symbol: "keyboard", title: "No bindings yet", detail: "Add a binding to give a shortcut a command.") {
+                    Button(localized("New Binding")) { model.addBinding() }
+                        .buttonStyle(.keymin(.primary, shortcut: "⌘N"))
+                        .keyboardFocusable()
+                }
+            } else {
+                // Bindings exist but none is selected.
+                placeholder(symbol: "keyboard", title: "Choose a binding", detail: "Pick a binding from the sidebar or press ⌘F to search.") {
+                    EmptyView()
+                }
+            }
+        case .modes:
+            ModesEditorView(model: model)
+        case .blacklist:
+            BlacklistEditorView(model: model)
+        case .includes:
+            IncludesEditorView(model: model)
+        case .afterSave:
+            AfterSaveEditorView(model: model)
+        case .source:
+            SourceEditorView(model: model)
+        }
+    }
+
+    // placeholder(symbol, title, detail, action): Center an icon, a heading, a short explanation,
+    // and an optional action in the content area.
+    private func placeholder<Action: View>(symbol: String, title: String, detail: String, @ViewBuilder action: () -> Action) -> some View {
+        VStack(spacing: 16) {
+            IconTile(symbol: symbol, size: 64)
+            Text(localized(title)).font(.system(size: 20, weight: .semibold)).foregroundStyle(Theme.textPrimary)
+            Text(localized(detail))
+                .font(.system(size: 13.5))
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 380)
+            action()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
 /// The file path, save state, and primary actions above the editor.
 private struct HeaderBar: View {
     @ObservedObject var model: AppModel
