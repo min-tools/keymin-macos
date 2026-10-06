@@ -250,3 +250,55 @@ private struct FileSaveCommands: View {
             .disabled(model.store.location == nil)
     }
 }
+
+/// The Binding menu: duplicate, delete, record, move, and find, acting on the selected binding.
+private struct BindingCommands: View {
+    @ObservedObject var model: AppModel
+
+    private var hasSelection: Bool { model.hasConfiguration && model.selectedBinding != nil }
+
+    var body: some View {
+        Button(localized("Duplicate Binding")) { model.duplicateSelected() }
+            .keyboardShortcut("d", modifiers: .command)
+            .disabled(!hasSelection)
+        Button(localized("Delete Binding")) { deleteBindingOrLine() }
+            .keyboardShortcut(.delete, modifiers: .command)
+            .disabled(!hasSelection)
+        Divider()
+        // Recording and finding switch to the Bindings page before notifying the views that act.
+        Button(localized("Record Shortcut")) {
+            model.page = .binding
+            NotificationCenter.default.post(name: .recordShortcut, object: nil)
+        }
+            .keyboardShortcut("r", modifiers: .command)
+            .disabled(!hasSelection)
+        Button(localized("Move Up")) { model.moveSelected(by: -1) }
+            .keyboardShortcut(.upArrow, modifiers: [.command, .option])
+            .disabled(!model.canMoveSelected.up)
+        Button(localized("Move Down")) { model.moveSelected(by: 1) }
+            .keyboardShortcut(.downArrow, modifiers: [.command, .option])
+            .disabled(!model.canMoveSelected.down)
+        Divider()
+        Button(localized("Find Binding…")) {
+            model.page = .binding
+            NotificationCenter.default.post(name: .focusSidebarSearch, object: keyWindow)
+        }
+            .keyboardShortcut("f", modifiers: .command)
+            .disabled(!model.hasConfiguration)
+    }
+
+    // deleteBindingOrLine(): The Delete Binding item's action. Its ⌘⌫ shortcut reaches the menu
+    // before a text field, so when that key press triggers it while text is being edited, it
+    // deletes to the start of the line, as ⌘⌫ does elsewhere in macOS. Chosen from the menu with
+    // the mouse, or with no text being edited, it asks before removing the selected binding.
+    private func deleteBindingOrLine() {
+        // Only the Delete key press itself (key code 0x33) goes to the text. Text fields and the
+        // code editors edit through an NSTextView.
+        if let event = NSApp.currentEvent, event.type == .keyDown, event.keyCode == 0x33,
+           let textView = NSApp.keyWindow?.firstResponder as? NSTextView, textView.isEditable {
+            textView.deleteToBeginningOfLine(nil)
+            return
+        }
+        model.confirmDeleteSelected()
+    }
+}
