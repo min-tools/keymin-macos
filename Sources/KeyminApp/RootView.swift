@@ -1,6 +1,96 @@
 import AppKit
 import SwiftUI
 
+/// The file path, save state, and primary actions above the editor.
+private struct HeaderBar: View {
+    @ObservedObject var model: AppModel
+    @ObservedObject private var store: ConfigStore
+
+    // init(model): Observe the model and its store, so the path and save state stay current.
+    init(model: AppModel) {
+        self.model = model
+        _store = ObservedObject(wrappedValue: model.store)
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // The path, where a link leads, and the Change button.
+            if let location = store.location {
+                HStack(spacing: 8) {
+                    Image(systemName: location.isSymbolicLink ? "link" : "doc.text")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.textSecondary)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(location.displayPath)
+                            .font(Theme.mono(12, weight: .medium))
+                            .foregroundStyle(Theme.textPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        // Show where a link leads.
+                        if location.isSymbolicLink {
+                            Text(localizedFormat("Link to %@", location.resolvedDisplayPath))
+                                .font(.system(size: 11))
+                                .foregroundStyle(Theme.textSecondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                    }
+                }
+                .help(location.resolvedURL.path)
+                Button(localized("Change")) { model.chooseFile(in: NSApp.keyWindow) }
+                    .buttonStyle(.keymin(.secondary, size: .small))
+                    .keyboardFocusable()
+                    .help(localized("Choose another configuration file"))
+            }
+            Spacer(minLength: 12)
+            // The last save error, kept short next to the status pill; the tooltip holds all of it.
+            if let error = model.saveError {
+                Text(error)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.danger)
+                    .lineLimit(2)
+                    .frame(maxWidth: 360, alignment: .trailing)
+                    .help(error)
+            }
+            statusPill
+            // Save is disabled while nothing is unsaved; its help text explains a blocked save.
+            Button(localized("Save")) { model.save() }
+                .buttonStyle(.keymin(.primary, shortcut: "⌘S"))
+                .keyboardFocusable()
+                .disabled(!model.hasUnsavedChanges)
+                .help(localized(model.blockingErrors.isEmpty ? "Write the configuration to disk" : "Fix the listed problems before saving"))
+        }
+        .padding(.horizontal, 20)
+        .frame(height: 64)
+        .zoomsWindowOnDoubleClick()
+    }
+
+    @ViewBuilder private var statusPill: some View {
+        // Free users' blocking errors leave out problems they cannot reach, so warnings are counted
+        // on their own rather than as the remainder.
+        let errors = model.blockingErrors.count
+        let warnings = model.diagnostics.filter { $0.severity == .warning }.count
+        // Problems block saving, so they outrank everything else.
+        if errors > 0 {
+            StatusPill(tone: .negative, text: errors == 1 ? localized("1 problem") : localizedFormat("%lld problems", Int64(errors)))
+        } else if model.hasUnsavedChanges {
+            // Unsaved edits, including unapplied Source text, noting warnings when there are any.
+            StatusPill(tone: .warning, text: warnings > 0 ? localized("Unsaved · warnings") : localized("Unsaved changes"))
+        } else if warnings > 0 {
+            // Clean, but the editor noticed something worth a look.
+            StatusPill(tone: .warning, text: warnings == 1 ? localized("1 warning") : localizedFormat("%lld warnings", Int64(warnings)))
+        } else if model.savedRecently {
+            // Confirm the save and name any requested shortcut. Its result is unknown.
+            StatusPill(tone: .positive, text: model.afterSave.isConfigured
+                ? localizedFormat("Saved · requested “%@”", model.afterSave.trimmedName)
+                : localized("Saved"))
+        } else {
+            // Clean and quiet.
+            StatusPill(tone: .positive, text: localized("Saved"))
+        }
+    }
+}
+
 /// The welcome screen: first run, a link awaiting access, or a file that could not be read.
 private struct WelcomeView: View {
     @ObservedObject var model: AppModel
