@@ -119,3 +119,64 @@ private struct PageRow: View {
         .animation(.easeOut(duration: 0.12), value: selected)
     }
 }
+
+/// SwiftUI's sidebar list supplies native selection and keyboard behavior, while this public
+/// AppKit setting leaves the selected-row drawing to the rows instead of adding a solid fill.
+private struct SidebarListSelectionAppearance: NSViewRepresentable {
+    /// Called once, after the table has been configured, so the list can enable selection.
+    let onConfigured: () -> Void
+
+    // makeNSView(context): Create the invisible view that will look for the table.
+    func makeNSView(context: Context) -> ConfigurationView {
+        let view = ConfigurationView()
+        view.onConfigured = onConfigured
+        return view
+    }
+
+    // updateNSView(nsView, context): Re-apply the table settings on every SwiftUI update, in
+    // case the list rebuilt its table.
+    func updateNSView(_ nsView: ConfigurationView, context: Context) {
+        nsView.onConfigured = onConfigured
+        nsView.configureTable()
+    }
+
+    /// An empty view placed inside a section header, so it sits in the list's table hierarchy.
+    final class ConfigurationView: NSView {
+        var onConfigured: (() -> Void)?
+        /// Guards the one-time callback; the settings themselves may be applied again.
+        private var configuredTable = false
+
+        /// No intrinsic size, so the view never affects the header layout.
+        override var intrinsicContentSize: NSSize {
+            NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric)
+        }
+
+        // viewDidMoveToSuperview(): Configure as soon as the view is attached to the list.
+        override func viewDidMoveToSuperview() {
+            super.viewDidMoveToSuperview()
+            configureTable()
+        }
+
+        // configureTable(): Find the enclosing table on the next run loop turn, when the view is
+        // fully attached, then turn off its selection highlight and focus ring.
+        func configureTable() {
+            DispatchQueue.main.async { [weak self] in
+                var ancestor = self?.superview
+                while let view = ancestor {
+                    // The first table up the chain is the sidebar list's own.
+                    if let table = view as? NSTableView {
+                        table.selectionHighlightStyle = .none
+                        table.focusRingType = .none
+                        // Tell the list once; it can now enable selection safely.
+                        if self?.configuredTable == false {
+                            self?.configuredTable = true
+                            self?.onConfigured?()
+                        }
+                        return
+                    }
+                    ancestor = view.superview
+                }
+            }
+        }
+    }
+}
