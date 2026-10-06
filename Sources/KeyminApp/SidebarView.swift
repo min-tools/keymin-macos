@@ -76,3 +76,46 @@ private struct BindingRow: View {
         .animation(.easeOut(duration: 0.12), value: selected)
     }
 }
+
+/// One configuration page in the list: an icon tile, the page name, and an optional count.
+private struct PageRow: View {
+    let symbol: String
+    let title: String
+    /// Items on the page; nil or zero shows nothing.
+    let count: Int?
+    let selected: Bool
+    @State private var hovering = false
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 9, style: .continuous)
+    }
+
+    var body: some View {
+        HStack(spacing: 11) {
+            IconTile(symbol: symbol, size: 28, tint: Theme.textSecondary)
+            Text(localized(title))
+                .font(.system(size: 13.5, weight: selected ? .semibold : .regular))
+                .foregroundStyle(Theme.textPrimary)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+            // Only a positive count is worth a number.
+            if let count, count > 0 {
+                Text(String(count))
+                    .font(Theme.mono(11, weight: .medium))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 40)
+        // Same self-drawn selection and hover fill as the binding rows.
+        .background(
+            selected ? Theme.sidebarSelection
+                : hovering ? Theme.sidebarHover : Color.clear,
+            in: shape
+        )
+        .contentShape(shape)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovering)
+        .animation(.easeOut(duration: 0.12), value: selected)
+    }
+}
