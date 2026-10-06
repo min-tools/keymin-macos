@@ -91,6 +91,43 @@ private struct HeaderBar: View {
     }
 }
 
+/// Shown when another program changed the file while there are unsaved edits.
+private struct ExternalChangeBanner: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(localized("The file changed on disk"))
+                    .font(.system(size: 12, weight: .semibold))
+                Text(localized("Reload to see the new contents, or keep your unsaved edits and overwrite the file when you save."))
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.textSecondary)
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 12)
+            Button(localized("Keep Mine")) { model.dismissExternalChange() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .keyboardFocusable()
+            Button(localized("Reload")) { model.reload() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .keyboardFocusable()
+        }
+        // Plain bordered buttons on the orange banner rather than accent-tinted ones.
+        .tint(nil)
+        .foregroundStyle(Theme.textPrimary)
+        .padding(.horizontal, 14)
+        .frame(minHeight: 58)
+        .background(Color(nsColor: .systemOrange).opacity(0.16))
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color(nsColor: .systemOrange).opacity(0.48)).frame(height: 1)
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
 /// The welcome screen: first run, a link awaiting access, or a file that could not be read.
 private struct WelcomeView: View {
     @ObservedObject var model: AppModel
