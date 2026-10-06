@@ -231,3 +231,22 @@ private struct FileOpenCommands: View {
             .keyboardShortcut("n", modifiers: [.command, .shift])
     }
 }
+
+/// The File menu's Save, Revert, Reload, and Reveal items, replacing the standard Save group.
+private struct FileSaveCommands: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        Button(localized("Save")) { model.save() }
+            .keyboardShortcut("s", modifiers: .command)
+            .disabled(!model.hasConfiguration || !model.hasUnsavedChanges)
+        Button(localized("Revert to Saved")) { model.confirmReload() }
+            .disabled(!model.hasConfiguration || !model.hasUnsavedChanges)
+        Button(localized("Reload From Disk")) { model.confirmReload() }
+            .keyboardShortcut("r", modifiers: [.command, .shift])
+            .disabled(model.store.location == nil)
+        Divider()
+        Button(localized("Reveal in Finder")) { model.store.revealInFinder() }
+            .disabled(model.store.location == nil)
+    }
+}
