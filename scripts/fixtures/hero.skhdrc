@@ -1,0 +1,30 @@
+# Sample hotkeys for the README screenshots.
+
+# Focus Safari
+alt + shift - s : /usr/bin/open -b com.apple.Safari
+
+# Focus Terminal
+alt + shift - t : /usr/bin/open -b com.apple.Terminal
+
+# Focus Mail
+alt + shift - m : /usr/bin/open -b com.apple.mail
+
+# Focus Notes
+alt + shift - n : /usr/bin/open -b com.apple.Notes
+
+# Jump to the address bar in every browser
+cmd - l [
+    "Safari"        : skhd -k "cmd - l"
+    "Google Chrome" : skhd -k "cmd - l"
+    *               ~
+]
+
+# Toggle full screen for the front window
+ctrl + alt - f : skhd -k "ctrl + cmd - f"
+
+# Resize mode: ⌃⌥R enters it, Escape leaves it
+:: resize @ : echo "resize mode"
+ctrl + alt - r ; resize
+resize < escape ; default
+resize < h : yabai -m window --resize left:-40:0
+resize < l : yabai -m window --resize right:40:0
