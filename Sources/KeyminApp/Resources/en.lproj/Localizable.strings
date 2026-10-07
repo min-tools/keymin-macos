@@ -1,0 +1,1033 @@
+/* Keymin — en localization. Each comment shows the English source text. */
+
+/* # Empty configuration */
+"# Empty configuration" = "# Empty configuration";
+
+/* # skhd configuration edited with Keymin. # Each binding is written as: modifiers - key : command  */
+"# skhd configuration edited with Keymin.\n# Each binding is written as: modifiers - key : command\n" = "# skhd configuration edited with Keymin.\n# Each binding is written as: modifiers - key : command\n";
+
+/* %@ is a link to %@. Select that file so Keymin can read and write it. */
+"%@ is a link to %@. Select that file so Keymin can read and write it." = "%@ is a link to %@. Select that file so Keymin can read and write it.";
+
+/* %@ is bound more than once in mode “%@”. */
+"%@ is bound more than once in mode “%@”." = "%@ is bound more than once in mode “%@”.";
+
+/* %@ per year */
+"%@ per year" = "%@ per year";
+
+/* %lld apps: %@ */
+"%lld apps: %@" = "%lld apps: %@";
+
+/* %lld bindings */
+"%lld bindings" = "%lld bindings";
+
+/* %lld more bindings need Keymin Pro */
+"%lld more bindings need Keymin Pro" = "%lld more bindings need Keymin Pro";
+
+/* %lld of %lld bindings */
+"%lld of %lld bindings" = "%lld of %lld bindings";
+
+/* %lld problems */
+"%lld problems" = "%lld problems";
+
+/* %lld warnings */
+"%lld warnings" = "%lld warnings";
+
+/* 0x27 */
+"0x27" = "0x27";
+
+/* 1 binding */
+"1 binding" = "1 binding";
+
+/* 1 more binding needs Keymin Pro */
+"1 more binding needs Keymin Pro" = "1 more binding needs Keymin Pro";
+
+/* 1 problem */
+"1 problem" = "1 problem";
+
+/* 1 warning */
+"1 warning" = "1 warning";
+
+/* 30 days of full access */
+"30 days of full access" = "30 days of full access";
+
+/* A compatible hotkey daemon written in Zig by Jackie Li. */
+"A compatible hotkey daemon written in Zig by Jackie Li." = "A compatible hotkey daemon written in Zig by Jackie Li.";
+
+/* A key code names a physical key. It stays the same when the keyboard layout changes. */
+"A key code names a physical key. It stays the same when the keyboard layout changes." = "A key code names a physical key. It stays the same when the keyboard layout changes.";
+
+/* A mode named “%@” already exists. */
+"A mode named “%@” already exists." = "A mode named “%@” already exists.";
+
+/* A shortcut already used by skhd may not reach Keymin. Set the key below, or record a combination skhd does not use. */
+"A shortcut already used by skhd may not reach Keymin. Set the key below, or record a combination skhd does not use." = "A shortcut already used by skhd may not reach Keymin. Set the key below, or record a combination skhd does not use.";
+
+/* About Keymin */
+"About Keymin" = "About Keymin";
+
+/* Action */
+"Action" = "Action";
+
+/* Active in modes */
+"Active in modes" = "Active in modes";
+
+/* Add */
+"Add" = "Add";
+
+/* Add a binding to give a shortcut a command. */
+"Add a binding to give a shortcut a command." = "Add a binding to give a shortcut a command.";
+
+/* Add a mode for another layer of shortcuts, such as a resize mode that you enter with a hotkey and leave with Escape. */
+"Add a mode for another layer of shortcuts, such as a resize mode that you enter with a hotkey and leave with Escape." = "Add a mode for another layer of shortcuts, such as a resize mode that you enter with a hotkey and leave with Escape.";
+
+/* Add App */
+"Add App" = "Add App";
+
+/* Add File */
+"Add File" = "Add File";
+
+/* Add Mode */
+"Add Mode" = "Add Mode";
+
+/* Add Path */
+"Add Path" = "Add Path";
+
+/* After installing, run skhd --start-service once. Keymin does not include, start, or control skhd. */
+"After installing, run skhd --start-service once. Keymin does not include, start, or control skhd." = "After installing, run skhd --start-service once. Keymin does not include, start, or control skhd.";
+
+/* After Saving */
+"After Saving" = "After Saving";
+
+/* After the trial, Keymin shows and edits only the first %lld bindings. The others are hidden but kept in the file. */
+"After the trial, Keymin shows and edits only the first %lld bindings. The others are hidden but kept in the file." = "After the trial, Keymin shows and edits only the first %lld bindings. The others are hidden but kept in the file.";
+
+/* Also send the keypress to the app */
+"Also send the keypress to the app" = "Also send the keypress to the app";
+
+/* App name */
+"App name" = "App name";
+
+/* App names cannot contain quotation marks. */
+"App names cannot contain quotation marks." = "App names cannot contain quotation marks.";
+
+/* App not found on this Mac */
+"App not found on this Mac" = "App not found on this Mac";
+
+/* Apple key code in hex, such as 0x27 for the quote key. Press Return to apply. */
+"Apple key code in hex, such as 0x27 for the quote key. Press Return to apply." = "Apple key code in hex, such as 0x27 for the quote key. Press Return to apply.";
+
+/* Apply */
+"Apply" = "Apply";
+
+/* Asked Shortcuts to run “%@”. */
+"Asked Shortcuts to run “%@”." = "Asked Shortcuts to run “%@”.";
+
+/* Binding */
+"Binding" = "Binding";
+
+/* Bindings */
+"Bindings" = "Bindings";
+
+/* Bindings in this mode and bindings that switch to it are updated too. */
+"Bindings in this mode and bindings that switch to it are updated too." = "Bindings in this mode and bindings that switch to it are updated too.";
+
+/* Bindings outside the default mode only work after a binding switches skhd into that mode. */
+"Bindings outside the default mode only work after a binding switches skhd into that mode." = "Bindings outside the default mode only work after a binding switches skhd into that mode.";
+
+/* Blacklist */
+"Blacklist" = "Blacklist";
+
+/* By key code */
+"By key code" = "By key code";
+
+/* By name */
+"By name" = "By name";
+
+/* Cancel */
+"Cancel" = "Cancel";
+
+/* Capture every keypress while active */
+"Capture every keypress while active" = "Capture every keypress while active";
+
+/* Change */
+"Change" = "Change";
+
+/* Check Again */
+"Check Again" = "Check Again";
+
+/* Checking installation paths and running processes. */
+"Checking installation paths and running processes." = "Checking installation paths and running processes.";
+
+/* Choose */
+"Choose" = "Choose";
+
+/* Choose a binding */
+"Choose a binding" = "Choose a binding";
+
+/* Choose a file skhd should also read. */
+"Choose a file skhd should also read." = "Choose a file skhd should also read.";
+
+/* Choose a yearly subscription or lifetime purchase at any time to edit every binding again. */
+"Choose a yearly subscription or lifetime purchase at any time to edit every binding again." = "Choose a yearly subscription or lifetime purchase at any time to edit every binding again.";
+
+/* Choose an app to fill in its name. */
+"Choose an app to fill in its name." = "Choose an app to fill in its name.";
+
+/* Choose another configuration file */
+"Choose another configuration file" = "Choose another configuration file";
+
+/* Choose Another File */
+"Choose Another File" = "Choose Another File";
+
+/* Choose Application… */
+"Choose Application…" = "Choose Application…";
+
+/* Choose Configuration File… */
+"Choose Configuration File…" = "Choose Configuration File…";
+
+/* Choose skhdrc */
+"Choose skhdrc" = "Choose skhdrc";
+
+/* Choose the app to open. */
+"Choose the app to open." = "Choose the app to open.";
+
+/* Choose the skhd configuration file to edit. It is usually ~/.config/skhd/skhdrc. */
+"Choose the skhd configuration file to edit. It is usually ~/.config/skhd/skhdrc." = "Choose the skhd configuration file to edit. It is usually ~/.config/skhd/skhdrc.";
+
+/* Choose where to create the new skhd configuration. skhd reads ~/.config/skhd/skhdrc by default. */
+"Choose where to create the new skhd configuration. skhd reads ~/.config/skhd/skhdrc by default." = "Choose where to create the new skhd configuration. skhd reads ~/.config/skhd/skhdrc by default.";
+
+/* Clear search */
+"Clear search" = "Clear search";
+
+/* Command for this app */
+"Command for this app" = "Command for this app";
+
+/* Command to run when the mode is entered */
+"Command to run when the mode is entered" = "Command to run when the mode is entered";
+
+/* Configuration */
+"Configuration" = "Configuration";
+
+/* Contacting the App Store… */
+"Contacting the App Store…" = "Contacting the App Store…";
+
+/* Continue */
+"Continue" = "Continue";
+
+/* Copied */
+"Copied" = "Copied";
+
+/* Copy */
+"Copy" = "Copy";
+
+/* Copy as Text */
+"Copy as Text" = "Copy as Text";
+
+/* Copy the command that starts skhd */
+"Copy the command that starts skhd" = "Copy the command that starts skhd";
+
+/* Copy the install command for %@ */
+"Copy the install command for %@" = "Copy the install command for %@";
+
+/* Create */
+"Create" = "Create";
+
+/* Create Configuration File… */
+"Create Configuration File…" = "Create Configuration File…";
+
+/* Create modes on the Modes page. Give each mode a binding to switch back, such as Escape; otherwise, skhd stays in that mode until reloaded. */
+"Create modes on the Modes page. Give each mode a binding to switch back, such as Escape; otherwise, skhd stays in that mode until reloaded." = "Create modes on the Modes page. Give each mode a binding to switch back, such as Escape; otherwise, skhd stays in that mode until reloaded.";
+
+/* Create New */
+"Create New" = "Create New";
+
+/* Create “Restart skhd” in Shortcuts. Add a Run Shell Script action with “skhd --restart-service”, using the full path to skhd. Shortcuts does not load your shell profile. Enable Allow Running Scripts in Shortcuts → Settings → Advanced. */
+"Create “Restart skhd” in Shortcuts. Add a Run Shell Script action with “skhd --restart-service”, using the full path to skhd. Shortcuts does not load your shell profile. Enable Allow Running Scripts in Shortcuts → Settings → Advanced." = "Create “Restart skhd” in Shortcuts. Add a Run Shell Script action with “skhd --restart-service”, using the full path to skhd. Shortcuts does not load your shell profile. Enable Allow Running Scripts in Shortcuts → Settings → Advanced.";
+
+/* Current command: %@ */
+"Current command: %@" = "Current command: %@";
+
+/* default */
+"default" = "default";
+
+/* Default mode */
+"Default mode" = "Default mode";
+
+/* Delete */
+"Delete" = "Delete";
+
+/* Delete Binding */
+"Delete Binding" = "Delete Binding";
+
+/* Delete the %@ binding? */
+"Delete the %@ binding?" = "Delete the %@ binding?";
+
+/* Digits */
+"Digits" = "Digits";
+
+/* Discard Changes */
+"Discard Changes" = "Discard Changes";
+
+/* Discard Edits */
+"Discard Edits" = "Discard Edits";
+
+/* Discard unsaved changes? */
+"Discard unsaved changes?" = "Discard unsaved changes?";
+
+/* Don't Save */
+"Don't Save" = "Don't Save";
+
+/* Duplicate */
+"Duplicate" = "Duplicate";
+
+/* Duplicate Binding */
+"Duplicate Binding" = "Duplicate Binding";
+
+/* Each per-app entry needs an app name. */
+"Each per-app entry needs an app name." = "Each per-app entry needs an app name.";
+
+/* Edit every binding and use the Source page. Pay yearly, or once for lifetime access. */
+"Edit every binding and use the Source page. Pay yearly, or once for lifetime access." = "Edit every binding and use the Source page. Pay yearly, or once for lifetime access.";
+
+/* Either */
+"Either" = "Either";
+
+/* Enter the name of a shortcut first. */
+"Enter the name of a shortcut first." = "Enter the name of a shortcut first.";
+
+/* Every other app */
+"Every other app" = "Every other app";
+
+/* Expected a file path in quotes after .load. */
+"Expected a file path in quotes after .load." = "Expected a file path in quotes after .load.";
+
+/* Expected a key. */
+"Expected a key." = "Expected a key.";
+
+/* Expected a mode declaration, modifier, or key. */
+"Expected a mode declaration, modifier, or key." = "Expected a mode declaration, modifier, or key.";
+
+/* Expected a mode name after “::”. */
+"Expected a mode name after “::”." = "Expected a mode name after “::”.";
+
+/* Expected a mode name after “;”. */
+"Expected a mode name after “;”." = "Expected a mode name after “;”.";
+
+/* Expected a mode name. */
+"Expected a mode name." = "Expected a mode name.";
+
+/* Expected a modifier such as cmd, alt, shift, ctrl, or fn. */
+"Expected a modifier such as cmd, alt, shift, ctrl, or fn." = "Expected a modifier such as cmd, alt, shift, ctrl, or fn.";
+
+/* Expected an app name in quotes or “]”. */
+"Expected an app name in quotes or “]”." = "Expected an app name in quotes or “]”.";
+
+/* Expected an app name in quotes, “*”, or “]”. */
+"Expected an app name in quotes, “*”, or “]”." = "Expected an app name in quotes, “*”, or “]”.";
+
+/* Expected hex digits after “0x”. */
+"Expected hex digits after “0x”." = "Expected hex digits after “0x”.";
+
+/* Expected “-” between the modifiers and the key. */
+"Expected “-” between the modifiers and the key." = "Expected “-” between the modifiers and the key.";
+
+/* Expected “:” and a command or “~” after the app name. */
+"Expected “:” and a command or “~” after the app name." = "Expected “:” and a command or “~” after the app name.";
+
+/* Expected “:” and a command or “~” after “*”. */
+"Expected “:” and a command or “~” after “*”." = "Expected “:” and a command or “~” after “*”.";
+
+/* Expected “:” and a command, “[” and per-app commands, or “;” and a mode. */
+"Expected “:” and a command, “[” and per-app commands, or “;” and a mode." = "Expected “:” and a command, “[” and per-app commands, or “;” and a mode.";
+
+/* Expected “<” after the mode list. */
+"Expected “<” after the mode list." = "Expected “<” after the mode list.";
+
+/* Expected “[” and a list of app names after .blacklist. */
+"Expected “[” and a list of app names after .blacklist." = "Expected “[” and a list of app names after .blacklist.";
+
+/* Expires %@ */
+"Expires %@" = "Expires %@";
+
+/* Extra comment lines above the binding */
+"Extra comment lines above the binding" = "Extra comment lines above the binding";
+
+/* File paths cannot contain quotation marks. */
+"File paths cannot contain quotation marks." = "File paths cannot contain quotation marks.";
+
+/* Filter %lld bindings */
+"Filter %lld bindings" = "Filter %lld bindings";
+
+/* Filter 1 binding */
+"Filter 1 binding" = "Filter 1 binding";
+
+/* Filter bindings */
+"Filter bindings" = "Filter bindings";
+
+/* Find Binding… */
+"Find Binding…" = "Find Binding…";
+
+/* Fix %lld problems before saving. */
+"Fix %lld problems before saving." = "Fix %lld problems before saving.";
+
+/* Forget Access */
+"Forget Access" = "Forget Access";
+
+/* Forget access to the configuration file? */
+"Forget access to the configuration file?" = "Forget access to the configuration file?";
+
+/* Forget File Access… */
+"Forget File Access…" = "Forget File Access…";
+
+/* Free · the first %lld bindings can be edited */
+"Free · the first %lld bindings can be edited" = "Free · the first %lld bindings can be edited";
+
+/* Function keys */
+"Function keys" = "Function keys";
+
+/* GitHub */
+"GitHub" = "GitHub";
+
+/* Grant Access */
+"Grant Access" = "Grant Access";
+
+/* Hotkeys for skhd, without the syntax */
+"Hotkeys for skhd, without the syntax" = "Hotkeys for skhd, without the syntax";
+
+/* Hyper */
+"Hyper" = "Hyper";
+
+/* Hyper stands for ⌃⌥⇧⌘ and Meh for ⌃⌥⇧. */
+"Hyper stands for ⌃⌥⇧⌘ and Meh for ⌃⌥⇧." = "Hyper stands for ⌃⌥⇧⌘ and Meh for ⌃⌥⇧.";
+
+/* Hyper: ⌃⌥⇧⌘ together */
+"Hyper: ⌃⌥⇧⌘ together" = "Hyper: ⌃⌥⇧⌘ together";
+
+/* In %@ */
+"In %@" = "In %@";
+
+/* Included Files */
+"Included Files" = "Included Files";
+
+/* Install one of the projects below and start it. You can prepare the configuration in the meantime. */
+"Install one of the projects below and start it. You can prepare the configuration in the meantime." = "Install one of the projects below and start it. You can prepare the configuration in the meantime.";
+
+/* Keep Mine */
+"Keep Mine" = "Keep Mine";
+
+/* Key */
+"Key" = "Key";
+
+/* Keymin could not use that file */
+"Keymin could not use that file" = "Keymin could not use that file";
+
+/* Keymin does not include, start, or control skhd. */
+"Keymin does not include, start, or control skhd." = "Keymin does not include, start, or control skhd.";
+
+/* Keymin edits your skhd configuration. Install and start skhd on this Mac to use the shortcuts. */
+"Keymin edits your skhd configuration. Install and start skhd on this Mac to use the shortcuts." = "Keymin edits your skhd configuration. Install and start skhd on this Mac to use the shortcuts.";
+
+/* Keymin is fully unlocked for your first 30 days. No subscription starts, and you will not be charged. */
+"Keymin is fully unlocked for your first 30 days. No subscription starts, and you will not be charged." = "Keymin is fully unlocked for your first 30 days. No subscription starts, and you will not be charged.";
+
+/* Keymin Pro */
+"Keymin Pro" = "Keymin Pro";
+
+/* Keymin Pro Lifetime · %@ */
+"Keymin Pro Lifetime · %@" = "Keymin Pro Lifetime · %@";
+
+/* Keymin Pro Yearly */
+"Keymin Pro Yearly" = "Keymin Pro Yearly";
+
+/* Keymin Pro… */
+"Keymin Pro…" = "Keymin Pro…";
+
+/* Keymin removes its saved permission for the file. Nothing is deleted. Choose the file again to keep editing it. */
+"Keymin removes its saved permission for the file. Nothing is deleted. Choose the file again to keep editing it." = "Keymin removes its saved permission for the file. Nothing is deleted. Choose the file again to keep editing it.";
+
+/* Keypress passes through to the app */
+"Keypress passes through to the app" = "Keypress passes through to the app";
+
+/* Left */
+"Left" = "Left";
+
+/* Letters */
+"Letters" = "Letters";
+
+/* Letters and digits follow the active keyboard layout. */
+"Letters and digits follow the active keyboard layout." = "Letters and digits follow the active keyboard layout.";
+
+/* Lifetime */
+"Lifetime" = "Lifetime";
+
+/* Line %lld: %@ */
+"Line %lld: %@" = "Line %lld: %@";
+
+/* Link to %@ */
+"Link to %@" = "Link to %@";
+
+/* Loading App Store products… */
+"Loading App Store products…" = "Loading App Store products…";
+
+/* Look for skhd again */
+"Look for skhd again" = "Look for skhd again";
+
+/* Looking for skhd */
+"Looking for skhd" = "Looking for skhd";
+
+/* Manage Subscription */
+"Manage Subscription" = "Manage Subscription";
+
+/* Media keys */
+"Media keys" = "Media keys";
+
+/* Media keys are matched by their function, not by position. */
+"Media keys are matched by their function, not by position." = "Media keys are matched by their function, not by position.";
+
+/* Meh */
+"Meh" = "Meh";
+
+/* Meh: ⌃⌥⇧ together */
+"Meh: ⌃⌥⇧ together" = "Meh: ⌃⌥⇧ together";
+
+/* Mode %@ */
+"Mode %@" = "Mode %@";
+
+/* Mode is not declared */
+"Mode is not declared" = "Mode is not declared";
+
+/* Mode name */
+"Mode name" = "Mode name";
+
+/* Mode name “%@” must start with a letter, contain only letters and underscores, and may end with digits. */
+"Mode name “%@” must start with a letter, contain only letters and underscores, and may end with digits." = "Mode name “%@” must start with a letter, contain only letters and underscores, and may end with digits.";
+
+/* Mode “%@” is declared more than once. */
+"Mode “%@” is declared more than once." = "Mode “%@” is declared more than once.";
+
+/* Mode “%@” is used before it is declared with “:: %@”. */
+"Mode “%@” is used before it is declared with “:: %@”." = "Mode “%@” is used before it is declared with “:: %@”.";
+
+/* Modes */
+"Modes" = "Modes";
+
+/* Modes are written as “:: name” and must appear before the bindings that use them. Keymin adds a new declaration after the existing ones, or above the first binding. */
+"Modes are written as “:: name” and must appear before the bindings that use them. Keymin adds a new declaration after the existing ones, or above the first binding." = "Modes are written as “:: name” and must appear before the bindings that use them. Keymin adds a new declaration after the existing ones, or above the first binding.";
+
+/* Modes group shortcuts into layers. Switching modes activates that layer's bindings. */
+"Modes group shortcuts into layers. Switching modes activates that layer's bindings." = "Modes group shortcuts into layers. Switching modes activates that layer's bindings.";
+
+/* Modifiers */
+"Modifiers" = "Modifiers";
+
+/* Move Down */
+"Move Down" = "Move Down";
+
+/* Move Up */
+"Move Up" = "Move Up";
+
+/* Name this binding (saved as a comment) */
+"Name this binding (saved as a comment)" = "Name this binding (saved as a comment)";
+
+/* Named keys */
+"Named keys" = "Named keys";
+
+/* Named keys are matched by position and are independent of the keyboard layout. */
+"Named keys are matched by position and are independent of the keyboard layout." = "Named keys are matched by position and are independent of the keyboard layout.";
+
+/* New Binding */
+"New Binding" = "New Binding";
+
+/* No active purchase was found. */
+"No active purchase was found." = "No active purchase was found.";
+
+/* No app chosen yet */
+"No app chosen yet" = "No app chosen yet";
+
+/* No apps are blacklisted. */
+"No apps are blacklisted." = "No apps are blacklisted.";
+
+/* No bindings */
+"No bindings" = "No bindings";
+
+/* No bindings yet */
+"No bindings yet" = "No bindings yet";
+
+/* No configuration file is selected. */
+"No configuration file is selected." = "No configuration file is selected.";
+
+/* No files are included. */
+"No files are included." = "No files are included.";
+
+/* No Keymin Pro purchase was found for this Apple Account. */
+"No Keymin Pro purchase was found for this Apple Account." = "No Keymin Pro purchase was found for this Apple Account.";
+
+/* No modes are declared. */
+"No modes are declared." = "No modes are declared.";
+
+/* Not finished yet */
+"Not finished yet" = "Not finished yet";
+
+/* OK */
+"OK" = "OK";
+
+/* One more permission */
+"One more permission" = "One more permission";
+
+/* Only %@ reached Keymin. */
+"Only %@ reached Keymin." = "Only %@ reached Keymin.";
+
+/* Only the last “other apps” entry takes effect. */
+"Only the last “other apps” entry takes effect." = "Only the last “other apps” entry takes effect.";
+
+/* open -a Safari */
+"open -a Safari" = "open -a Safari";
+
+/* Open an app */
+"Open an app" = "Open an app";
+
+/* Open Shortcuts */
+"Open Shortcuts" = "Open Shortcuts";
+
+/* Open the %@ project on GitHub */
+"Open the %@ project on GitHub" = "Open the %@ project on GitHub";
+
+/* Opened by name */
+"Opened by name" = "Opened by name";
+
+/* Optional, for example a notification */
+"Optional, for example a notification" = "Optional, for example a notification";
+
+/* or */
+"or" = "or";
+
+/* Other apps */
+"Other apps" = "Other apps";
+
+/* other apps */
+"other apps" = "other apps";
+
+/* Other key code… */
+"Other key code…" = "Other key code…";
+
+/* Pass the saved file's path to a shortcut in the Shortcuts app. */
+"Pass the saved file's path to a shortcut in the Shortcuts app." = "Pass the saved file's path to a shortcut in the Shortcuts app.";
+
+/* Pass through */
+"Pass through" = "Pass through";
+
+/* Passes through */
+"Passes through" = "Passes through";
+
+/* path/to/file */
+"path/to/file" = "path/to/file";
+
+/* Payment is charged to your Apple Account. The yearly subscription renews automatically unless you cancel it in App Store settings at least a day before the current period ends. */
+"Payment is charged to your Apple Account. The yearly subscription renews automatically unless you cancel it in App Store settings at least a day before the current period ends." = "Payment is charged to your Apple Account. The yearly subscription renews automatically unless you cancel it in App Store settings at least a day before the current period ends.";
+
+/* Per-app bindings need at least one named app. */
+"Per-app bindings need at least one named app." = "Per-app bindings need at least one named app.";
+
+/* Per-app commands */
+"Per-app commands" = "Per-app commands";
+
+/* Pick a binding from the sidebar or press ⌘F to search. */
+"Pick a binding from the sidebar or press ⌘F to search." = "Pick a binding from the sidebar or press ⌘F to search.";
+
+/* Pick an app */
+"Pick an app" = "Pick an app";
+
+/* Pick one. Both read the same configuration file. */
+"Pick one. Both read the same configuration file." = "Pick one. Both read the same configuration file.";
+
+/* Press keys… %@ */
+"Press keys… %@" = "Press keys… %@";
+
+/* Press keys… (Esc to cancel) */
+"Press keys… (Esc to cancel)" = "Press keys… (Esc to cancel)";
+
+/* Press the keys you want to bind. Modifiers and the key can also be set by hand below. */
+"Press the keys you want to bind. Modifiers and the key can also be set by hand below." = "Press the keys you want to bind. Modifiers and the key can also be set by hand below.";
+
+/* Privacy Policy */
+"Privacy Policy" = "Privacy Policy";
+
+/* Privacy Policy… */
+"Privacy Policy…" = "Privacy Policy…";
+
+/* Pro */
+"Pro" = "Pro";
+
+/* Pro purchases are unavailable right now. Please try again later. */
+"Pro purchases are unavailable right now. Please try again later." = "Pro purchases are unavailable right now. Please try again later.";
+
+/* Pro trial · %lld days remaining */
+"Pro trial · %lld days remaining" = "Pro trial · %lld days remaining";
+
+/* Pro trial · 1 day remaining */
+"Pro trial · 1 day remaining" = "Pro trial · 1 day remaining";
+
+/* Pro trial · ends %@ */
+"Pro trial · ends %@" = "Pro trial · ends %@";
+
+/* Pro trial · first payment %@ */
+"Pro trial · first payment %@" = "Pro trial · first payment %@";
+
+/* Pro trial · until %@ */
+"Pro trial · until %@" = "Pro trial · until %@";
+
+/* Punctuation and keypad */
+"Punctuation and keypad" = "Punctuation and keypad";
+
+/* Purchase */
+"Purchase" = "Purchase";
+
+/* Quit Without Saving */
+"Quit Without Saving" = "Quit Without Saving";
+
+/* Record Shortcut */
+"Record Shortcut" = "Record Shortcut";
+
+/* Recording stopped because another app came to the front. */
+"Recording stopped because another app came to the front." = "Recording stopped because another app came to the front.";
+
+/* Reload */
+"Reload" = "Reload";
+
+/* Reload From Disk */
+"Reload From Disk" = "Reload From Disk";
+
+/* Reload to see the new contents, or keep your unsaved edits and overwrite the file when you save. */
+"Reload to see the new contents, or keep your unsaved edits and overwrite the file when you save." = "Reload to see the new contents, or keep your unsaved edits and overwrite the file when you save.";
+
+/* Remove app */
+"Remove app" = "Remove app";
+
+/* Remove file */
+"Remove file" = "Remove file";
+
+/* Remove mode */
+"Remove mode" = "Remove mode";
+
+/* Rename */
+"Rename" = "Rename";
+
+/* Renews %@ */
+"Renews %@" = "Renews %@";
+
+/* Restart skhd */
+"Restart skhd" = "Restart skhd";
+
+/* Restart skhd with Shortcuts */
+"Restart skhd with Shortcuts" = "Restart skhd with Shortcuts";
+
+/* Restore Purchases */
+"Restore Purchases" = "Restore Purchases";
+
+/* Restoring… */
+"Restoring…" = "Restoring…";
+
+/* Reveal in Finder */
+"Reveal in Finder" = "Reveal in Finder";
+
+/* Revert to Saved */
+"Revert to Saved" = "Revert to Saved";
+
+/* Right */
+"Right" = "Right";
+
+/* Run a command */
+"Run a command" = "Run a command";
+
+/* Run a shortcut after every save */
+"Run a shortcut after every save" = "Run a shortcut after every save";
+
+/* Run command */
+"Run command" = "Run command";
+
+/* Run Now */
+"Run Now" = "Run Now";
+
+/* Run this in Terminal, then check again: */
+"Run this in Terminal, then check again:" = "Run this in Terminal, then check again:";
+
+/* Running apps */
+"Running apps" = "Running apps";
+
+/* Runs: %@ */
+"Runs: %@" = "Runs: %@";
+
+/* Save */
+"Save" = "Save";
+
+/* Save changes to the skhd configuration? */
+"Save changes to the skhd configuration?" = "Save changes to the skhd configuration?";
+
+/* Saved */
+"Saved" = "Saved";
+
+/* Saved · requested “%@” */
+"Saved · requested “%@”" = "Saved · requested “%@”";
+
+/* Shared with your family */
+"Shared with your family" = "Shared with your family";
+
+/* Shortcut */
+"Shortcut" = "Shortcut";
+
+/* Shortcut name */
+"Shortcut name" = "Shortcut name";
+
+/* Shortcuts could not be opened. */
+"Shortcuts could not be opened." = "Shortcuts could not be opened.";
+
+/* Single-character keys must be a letter or digit. */
+"Single-character keys must be a letter or digit." = "Single-character keys must be a letter or digit.";
+
+/* skhd also reads these files, so a long configuration can be split into parts. Relative paths are resolved from the folder of the main file. */
+"skhd also reads these files, so a long configuration can be split into parts. Relative paths are resolved from the folder of the main file." = "skhd also reads these files, so a long configuration can be split into parts. Relative paths are resolved from the folder of the main file.";
+
+/* skhd ignores every keypress while one of these apps is in front. Use it for terminals, virtual machines, and remote desktops that need the raw keys. */
+"skhd ignores every keypress while one of these apps is in front. Use it for terminals, virtual machines, and remote desktops that need the raw keys." = "skhd ignores every keypress while one of these apps is in front. Use it for terminals, virtual machines, and remote desktops that need the raw keys.";
+
+/* skhd is running on this Mac */
+"skhd is running on this Mac" = "skhd is running on this Mac";
+
+/* skhd matches the app name as shown in the menu bar, ignoring case. */
+"skhd matches the app name as shown in the menu bar, ignoring case." = "skhd matches the app name as shown in the menu bar, ignoring case.";
+
+/* skhd runs this with “$SHELL -c”. Use line breaks to separate commands. */
+"skhd runs this with “$SHELL -c”. Use line breaks to separate commands." = "skhd runs this with “$SHELL -c”. Use line breaks to separate commands.";
+
+/* skhd was found, but no running process was detected */
+"skhd was found, but no running process was detected" = "skhd was found, but no running process was detected";
+
+/* skhd was not found on this Mac */
+"skhd was not found on this Mac" = "skhd was not found on this Mac";
+
+/* Source */
+"Source" = "Source";
+
+/* Source editing gives access to the whole file. Without Pro, use the forms to edit the first %lld bindings. Hidden bindings stay in the file. */
+"Source editing gives access to the whole file. Without Pro, use the forms to edit the first %lld bindings. Hidden bindings stay in the file." = "Source editing gives access to the whole file. Without Pro, use the forms to edit the first %lld bindings. Hidden bindings stay in the file.";
+
+/* Start skhd to use your hotkeys, then check again. */
+"Start skhd to use your hotkeys, then check again." = "Start skhd to use your hotkeys, then check again.";
+
+/* Switch mode */
+"Switch mode" = "Switch mode";
+
+/* Switch to mode %@ */
+"Switch to mode %@" = "Switch to mode %@";
+
+/* Terms of Use (EULA) */
+"Terms of Use (EULA)" = "Terms of Use (EULA)";
+
+/* That is not the file the link points to. */
+"That is not the file the link points to." = "That is not the file the link points to.";
+
+/* The App Store could not verify this purchase. */
+"The App Store could not verify this purchase." = "The App Store could not verify this purchase.";
+
+/* The binding is removed from the configuration when you save. */
+"The binding is removed from the configuration when you save." = "The binding is removed from the configuration when you save.";
+
+/* The blacklist needs at least one app name, and names cannot be empty. */
+"The blacklist needs at least one app name, and names cannot be empty." = "The blacklist needs at least one app name, and names cannot be empty.";
+
+/* The blacklist needs at least one app name. */
+"The blacklist needs at least one app name." = "The blacklist needs at least one app name.";
+
+/* The blacklisted app name “%@” has spaces before or after it, so skhd never matches it. */
+"The blacklisted app name “%@” has spaces before or after it, so skhd never matches it." = "The blacklisted app name “%@” has spaces before or after it, so skhd never matches it.";
+
+/* The chosen file is a link to %@. macOS needs your permission for that file as well before Keymin can read and write it. */
+"The chosen file is a link to %@. macOS needs your permission for that file as well before Keymin can read and write it." = "The chosen file is a link to %@. macOS needs your permission for that file as well before Keymin can read and write it.";
+
+/* The command ends with a backslash, which would join the next line to it. */
+"The command ends with a backslash, which would join the next line to it." = "The command ends with a backslash, which would join the next line to it.";
+
+/* The command for %@ ends with a backslash, which would join the next line to it. */
+"The command for %@ ends with a backslash, which would join the next line to it." = "The command for %@ ends with a backslash, which would join the next line to it.";
+
+/* The command for %@ is empty. */
+"The command for %@ is empty." = "The command for %@ is empty.";
+
+/* The command for mode “%@” ends with a backslash, which would join the next line to it. */
+"The command for mode “%@” ends with a backslash, which would join the next line to it." = "The command for mode “%@” ends with a backslash, which would join the next line to it.";
+
+/* The command is empty. */
+"The command is empty." = "The command is empty.";
+
+/* The comment starts with the shortcut, so it is updated when the keys change. */
+"The comment starts with the shortcut, so it is updated when the keys change." = "The comment starts with the shortcut, so it is updated when the keys change.";
+
+/* The configuration could not be opened */
+"The configuration could not be opened" = "The configuration could not be opened";
+
+/* The configuration could not be read. */
+"The configuration could not be read." = "The configuration could not be read.";
+
+/* The configuration could not be read. %@ */
+"The configuration could not be read. %@" = "The configuration could not be read. %@";
+
+/* The configuration could not be saved. */
+"The configuration could not be saved." = "The configuration could not be saved.";
+
+/* The configuration could not be saved. %@ */
+"The configuration could not be saved. %@" = "The configuration could not be saved. %@";
+
+/* The configuration is read again from disk and your edits are lost. */
+"The configuration is read again from disk and your edits are lost." = "The configuration is read again from disk and your edits are lost.";
+
+/* The configuration still has problems skhd would reject, so it cannot be saved yet. */
+"The configuration still has problems skhd would reject, so it cannot be saved yet." = "The configuration still has problems skhd would reject, so it cannot be saved yet.";
+
+/* The default mode cannot be renamed. */
+"The default mode cannot be renamed." = "The default mode cannot be renamed.";
+
+/* The default mode does not exist yet at this point in the file. Add a binding in the default mode above this one, or declare “:: default” above it. */
+"The default mode does not exist yet at this point in the file. Add a binding in the default mode above this one, or declare “:: default” above it." = "The default mode does not exist yet at this point in the file. Add a binding in the default mode above this one, or declare “:: default” above it.";
+
+/* The exact text Keymin writes. Edit it here for anything the forms cannot express, then apply it. */
+"The exact text Keymin writes. Edit it here for anything the forms cannot express, then apply it." = "The exact text Keymin writes. Edit it here for anything the forms cannot express, then apply it.";
+
+/* The file can be saved once this binding is complete. */
+"The file can be saved once this binding is complete." = "The file can be saved once this binding is complete.";
+
+/* The file changed on disk */
+"The file changed on disk" = "The file changed on disk";
+
+/* The file is not UTF-8 text. */
+"The file is not UTF-8 text." = "The file is not UTF-8 text.";
+
+/* The file keeps “%@” until you apply the new path. */
+"The file keeps “%@” until you apply the new path." = "The file keeps “%@” until you apply the new path.";
+
+/* The first %lld bindings stay editable. The others are hidden but kept in the file. */
+"The first %lld bindings stay editable. The others are hidden but kept in the file." = "The first %lld bindings stay editable. The others are hidden but kept in the file.";
+
+/* The key code 0x%@ has lowercase hex digits, which skhd does not read. Write it as 0x%@. */
+"The key code 0x%@ has lowercase hex digits, which skhd does not read. Write it as 0x%@." = "The key code 0x%@ has lowercase hex digits, which skhd does not read. Write it as 0x%@.";
+
+/* The load directive needs a file path. */
+"The load directive needs a file path." = "The load directive needs a file path.";
+
+/* The name “default” belongs to the mode skhd starts in. */
+"The name “default” belongs to the mode skhd starts in." = "The name “default” belongs to the mode skhd starts in.";
+
+/* the new app */
+"the new app" = "the new app";
+
+/* The original hotkey daemon, written in C and maintained by Åsmund Vikane. */
+"The original hotkey daemon, written in C and maintained by Åsmund Vikane." = "The original hotkey daemon, written in C and maintained by Åsmund Vikane.";
+
+/* The purchase is awaiting approval. */
+"The purchase is awaiting approval." = "The purchase is awaiting approval.";
+
+/* The selected file is a symbolic link. Grant access to the file it points to. */
+"The selected file is a symbolic link. Grant access to the file it points to." = "The selected file is a symbolic link. Grant access to the file it points to.";
+
+/* The shortcut brings the app to the front, or launches it when it is not running. Switch to Run a command when the app needs arguments. */
+"The shortcut brings the app to the front, or launches it when it is not running. Switch to Run a command when the app needs arguments." = "The shortcut brings the app to the front, or launches it when it is not running. Switch to Run a command when the app needs arguments.";
+
+/* The Source page needs Keymin Pro */
+"The Source page needs Keymin Pro" = "The Source page needs Keymin Pro";
+
+/* This app has no bundle identifier */
+"This app has no bundle identifier" = "This app has no bundle identifier";
+
+/* This command has a line break inside quotes or a here-document. skhd cannot preserve it; saving will change the command's text. */
+"This command has a line break inside quotes or a here-document. skhd cannot preserve it; saving will change the command's text." = "This command has a line break inside quotes or a here-document. skhd cannot preserve it; saving will change the command's text.";
+
+/* This file binds %@ with %lld keys. */
+"This file binds %@ with %lld keys." = "This file binds %@ with %lld keys.";
+
+/* This file binds %@ with one key. */
+"This file binds %@ with one key." = "This file binds %@ with one key.";
+
+/* This key has no modifier, so typing it anywhere triggers the binding. */
+"This key has no modifier, so typing it anywhere triggers the binding." = "This key has no modifier, so typing it anywhere triggers the binding.";
+
+/* This path points to the current configuration. Including it would make skhd load the file repeatedly and fail. */
+"This path points to the current configuration. Including it would make skhd load the file repeatedly and fail." = "This path points to the current configuration. Including it would make skhd load the file repeatedly and fail.";
+
+/* Trial ended */
+"Trial ended" = "Trial ended";
+
+/* Try Again */
+"Try Again" = "Try Again";
+
+/* Unexpected invisible character %@. skhd separates words only with plain spaces, tabs, and line breaks. */
+"Unexpected invisible character %@. skhd separates words only with plain spaces, tabs, and line breaks." = "Unexpected invisible character %@. skhd separates words only with plain spaces, tabs, and line breaks.";
+
+/* Unknown option “.%@”. */
+"Unknown option “.%@”." = "Unknown option “.%@”.";
+
+/* Unlock %@ and the rest of Keymin Pro. */
+"Unlock %@ and the rest of Keymin Pro." = "Unlock %@ and the rest of Keymin Pro.";
+
+/* Unsaved changes */
+"Unsaved changes" = "Unsaved changes";
+
+/* Unsaved edits will be lost if you continue without saving. */
+"Unsaved edits will be lost if you continue without saving." = "Unsaved edits will be lost if you continue without saving.";
+
+/* Unsaved edits will be lost if you quit without saving. */
+"Unsaved edits will be lost if you quit without saving." = "Unsaved edits will be lost if you quit without saving.";
+
+/* Unsaved · warnings */
+"Unsaved · warnings" = "Unsaved · warnings";
+
+/* Until %@ */
+"Until %@" = "Until %@";
+
+/* Use Run a command with “open -a” and the app's path instead. */
+"Use Run a command with “open -a” and the app's path instead." = "Use Run a command with “open -a” and the app's path instead.";
+
+/* Use the exact shortcut name. Keymin cannot check the result; add a Show Notification action in Shortcuts to confirm it ran. */
+"Use the exact shortcut name. Keymin cannot check the result; add a Show Notification action in Shortcuts to confirm it ran." = "Use the exact shortcut name. Keymin cannot check the result; add a Show Notification action in Shortcuts to confirm it ran.";
+
+/* Which side of the keyboard counts */
+"Which side of the keyboard counts" = "Which side of the keyboard counts";
+
+/* With hot loading enabled, skhd applies saved changes automatically. */
+"With hot loading enabled, skhd applies saved changes automatically." = "With hot loading enabled, skhd applies saved changes automatically.";
+
+/* With hot loading enabled, skhd applies saved changes automatically. To restart it or run another action after saving, choose a Shortcuts shortcut. */
+"With hot loading enabled, skhd applies saved changes automatically. To restart it or run another action after saving, choose a Shortcuts shortcut." = "With hot loading enabled, skhd applies saved changes automatically. To restart it or run another action after saving, choose a Shortcuts shortcut.";
+
+/* Written as “*”. Without it, the shortcut does nothing in apps that are not listed. */
+"Written as “*”. Without it, the shortcut does nothing in apps that are not listed." = "Written as “*”. Without it, the shortcut does nothing in apps that are not listed.";
+
+/* Written as “->”. The app receives the key as if skhd had not intercepted it. */
+"Written as “->”. The app receives the key as if skhd had not intercepted it." = "Written as “->”. The app receives the key as if skhd had not intercepted it.";
+
+/* Written as “.blacklist [ … ]”. skhd matches each name as shown in the menu bar, ignoring case. */
+"Written as “.blacklist [ … ]”. skhd matches each name as shown in the menu bar, ignoring case." = "Written as “.blacklist [ … ]”. skhd matches each name as shown in the menu bar, ignoring case.";
+
+/* Written as “.load "file"”. Keymin edits only the main file; included files are not opened here. */
+"Written as “.load \"file\"”. Keymin edits only the main file; included files are not opened here." = "Written as “.load \"file\"”. Keymin edits only the main file; included files are not opened here.";
+
+/* Written as “@”. Keys without a binding in this mode are swallowed instead of reaching the app. */
+"Written as “@”. Keys without a binding in this mode are swallowed instead of reaching the app." = "Written as “@”. Keys without a binding in this mode are swallowed instead of reaching the app.";
+
+/* You have Keymin Pro. */
+"You have Keymin Pro." = "You have Keymin Pro.";
+
+/* Your file is usually at ~/.config/skhd/skhdrc. Keymin edits only the configuration you choose. */
+"Your file is usually at ~/.config/skhd/skhdrc. Keymin edits only the configuration you choose." = "Your file is usually at ~/.config/skhd/skhdrc. Keymin edits only the configuration you choose.";
+
+/* Your Pro trial is active. */
+"Your Pro trial is active." = "Your Pro trial is active.";
+
+/* “%@” is a key or modifier name in skhd and cannot name a mode. */
+"“%@” is a key or modifier name in skhd and cannot name a mode." = "“%@” is a key or modifier name in skhd and cannot name a mode.";
+
+/* ◆  */
+"◆ " = "◆ ";
+
+/* ✦  */
+"✦ " = "✦ ";
