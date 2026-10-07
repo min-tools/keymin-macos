@@ -333,3 +333,49 @@ private struct ViewCommands: View {
         Divider()
     }
 }
+
+/// The SwiftUI scene: one main window and the menu bar commands.
+@main
+struct KeyminApplication: App {
+    @NSApplicationDelegateAdaptor(KeyminAppDelegate.self) private var appDelegate
+
+    var body: some Scene {
+        Window("Keymin", id: "main") {
+            RootView(model: appDelegate.model)
+                .frame(minWidth: KeyminWindow.minimumSize.width, minHeight: KeyminWindow.minimumSize.height)
+        }
+        .defaultSize(KeyminWindow.defaultSize)
+        .windowStyle(.titleBar)
+        .commands {
+            // The app menu's own About, Pro, privacy, and forget-access items replace the standard
+            // About item.
+            CommandGroup(replacing: .appInfo) {
+                Button(localized("About Keymin")) {
+                    appDelegate.showAbout()
+                }
+                Divider()
+                Button(localized("Keymin Pro…")) {
+                    KeyminProStore.shared.present()
+                }
+                Button(localized("Privacy Policy…")) {
+                    appDelegate.showPrivacyPolicy(nil)
+                }
+                Button(localized("Forget File Access…")) {
+                    appDelegate.forgetAccess()
+                }
+            }
+            CommandGroup(replacing: .newItem) {
+                FileOpenCommands(model: appDelegate.model)
+            }
+            CommandGroup(replacing: .saveItem) {
+                FileSaveCommands(model: appDelegate.model)
+            }
+            CommandMenu(localized("Binding")) {
+                BindingCommands(model: appDelegate.model)
+            }
+            CommandGroup(before: .toolbar) {
+                ViewCommands(model: appDelegate.model)
+            }
+        }
+    }
+}
