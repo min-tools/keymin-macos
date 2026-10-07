@@ -1,0 +1,234 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		100000000000000000000101 /* AppIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000201 /* AppIcon.swift */; };
+		100000000000000000000102 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000202 /* AppModel.swift */; };
+		100000000000000000000103 /* BindingEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000203 /* BindingEditorView.swift */; };
+		100000000000000000000104 /* BuildEdition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000204 /* BuildEdition.swift */; };
+		100000000000000000000105 /* CodeTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000205 /* CodeTextView.swift */; };
+		100000000000000000000106 /* ConfigEditorsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000206 /* ConfigEditorsView.swift */; };
+		100000000000000000000107 /* ConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000207 /* ConfigStore.swift */; };
+		100000000000000000000108 /* KeyRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000208 /* KeyRecorder.swift */; };
+		100000000000000000000109 /* KeyminApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000209 /* KeyminApp.swift */; };
+		10000000000000000000010A /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020A /* Localization.swift */; };
+		10000000000000000000010B /* PrivacyPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020B /* PrivacyPolicy.swift */; };
+		10000000000000000000010C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020C /* RootView.swift */; };
+		10000000000000000000010D /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020D /* SidebarView.swift */; };
+		10000000000000000000010E /* SkhdDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020E /* SkhdDocument.swift */; };
+		10000000000000000000010F /* SkhdSyntax.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000020F /* SkhdSyntax.swift */; };
+		100000000000000000000110 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000210 /* Theme.swift */; };
+		100000000000000000000115 /* AccessBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000217 /* AccessBanner.swift */; };
+		100000000000000000000116 /* EditionSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000218 /* EditionSupport.swift */; };
+		100000000000000000000117 /* ProEntitlementLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000219 /* ProEntitlementLogic.swift */; };
+		100000000000000000000118 /* ProStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000021A /* ProStore.swift */; };
+		100000000000000000000119 /* AfterSave.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000021B /* AfterSave.swift */; };
+		10000000000000000000011A /* SkhdHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000021C /* SkhdHighlighter.swift */; };
+		10000000000000000000011B /* OpenAppCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000021D /* OpenAppCommand.swift */; };
+		10000000000000000000011C /* OpenAppEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000021E /* OpenAppEditorView.swift */; };
+		10000000000000000000011D /* PopUpMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000021F /* PopUpMenu.swift */; };
+		10000000000000000000011E /* PopUpMenuPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000220 /* PopUpMenuPlacement.swift */; };
+		10000000000000000000011F /* SkhdPresence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000221 /* SkhdPresence.swift */; };
+		100000000000000000000120 /* SkhdRequirementCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000222 /* SkhdRequirementCard.swift */; };
+		100000000000000000000111 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000211 /* PrivacyInfo.xcprivacy */; };
+		100000000000000000000112 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000212 /* PRIVACY.md */; };
+		100000000000000000000113 /* KeyminIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000213 /* KeyminIcon.icns */; };
+		100000000000000000000130 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000900 /* Localizable.strings */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		100000000000000000000200 /* Keymin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Keymin.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		100000000000000000000201 /* AppIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/AppIcon.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000202 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/AppModel.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000203 /* BindingEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/BindingEditorView.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000204 /* BuildEdition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/BuildEdition.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000205 /* CodeTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/CodeTextView.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000206 /* ConfigEditorsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/ConfigEditorsView.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000207 /* ConfigStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/ConfigStore.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000208 /* KeyRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/KeyRecorder.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000209 /* KeyminApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/KeyminApp.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000020A /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/Localization.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000020B /* PrivacyPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/PrivacyPolicy.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000020C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/RootView.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000020D /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/SidebarView.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000020E /* SkhdDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/SkhdDocument.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000020F /* SkhdSyntax.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/SkhdSyntax.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000210 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/Theme.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000217 /* AccessBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/AccessBanner.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000218 /* EditionSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/EditionSupport.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000219 /* ProEntitlementLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/ProEntitlementLogic.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000021A /* ProStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/ProStore.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000021B /* AfterSave.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/AfterSave.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000021C /* SkhdHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/SkhdHighlighter.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000021D /* OpenAppCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/OpenAppCommand.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000021E /* OpenAppEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/OpenAppEditorView.swift; sourceTree = SOURCE_ROOT; };
+		10000000000000000000021F /* PopUpMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/PopUpMenu.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000220 /* PopUpMenuPlacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/PopUpMenuPlacement.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000221 /* SkhdPresence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/SkhdPresence.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000222 /* SkhdRequirementCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/KeyminApp/SkhdRequirementCard.swift; sourceTree = SOURCE_ROOT; };
+		100000000000000000000211 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Sources/KeyminApp/Resources/PrivacyInfo.xcprivacy; sourceTree = SOURCE_ROOT; };
+		100000000000000000000212 /* PRIVACY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Sources/KeyminApp/Resources/PRIVACY.md; sourceTree = SOURCE_ROOT; };
+		100000000000000000000213 /* KeyminIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Sources/KeyminApp/Resources/KeyminIcon.icns; sourceTree = SOURCE_ROOT; };
+		100000000000000000000215 /* KeyminInfo.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = KeyminInfo.plist; sourceTree = SOURCE_ROOT; };
+		100000000000000000000216 /* KeyminApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KeyminApp.entitlements; sourceTree = SOURCE_ROOT; };
+		100000000000000000000A00 /* en Localizable */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = "Sources/KeyminApp/Resources/en.lproj/Localizable.strings"; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		100000000000000000000301 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		100000000000000000000400 = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000401 /* Sources */,
+				100000000000000000000402 /* Resources */,
+				100000000000000000000215 /* KeyminInfo.plist */,
+				100000000000000000000216 /* KeyminApp.entitlements */,
+				100000000000000000000403 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		100000000000000000000401 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000201, 100000000000000000000202, 100000000000000000000203,
+				100000000000000000000204, 100000000000000000000205, 100000000000000000000206,
+				100000000000000000000207, 100000000000000000000208, 100000000000000000000209,
+				10000000000000000000020A, 10000000000000000000020B, 10000000000000000000020C,
+				10000000000000000000020D, 10000000000000000000020E, 10000000000000000000020F,
+				100000000000000000000210,
+				100000000000000000000217, 100000000000000000000218, 100000000000000000000219,
+				10000000000000000000021A, 10000000000000000000021B, 10000000000000000000021C,
+				10000000000000000000021D, 10000000000000000000021E, 10000000000000000000021F,
+				100000000000000000000220, 100000000000000000000221, 100000000000000000000222,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+		100000000000000000000402 /* Resources */ = {
+			isa = PBXGroup;
+			children = (100000000000000000000211, 100000000000000000000212, 100000000000000000000213, 100000000000000000000900);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		100000000000000000000403 /* Products */ = {
+			isa = PBXGroup;
+			children = (100000000000000000000200 /* Keymin.app */);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		100000000000000000000500 /* Keymin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 100000000000000000000803;
+			buildPhases = (100000000000000000000302, 100000000000000000000301, 100000000000000000000303);
+			buildRules = ();
+			dependencies = ();
+			name = Keymin;
+			productName = Keymin;
+			productReference = 100000000000000000000200;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		100000000000000000000600 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = {100000000000000000000500 = {CreatedOnToolsVersion = 16.0;};};};
+			buildConfigurationList = 100000000000000000000800;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 100000000000000000000400;
+			productRefGroup = 100000000000000000000403;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (100000000000000000000500 /* Keymin */);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		100000000000000000000303 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (100000000000000000000111, 100000000000000000000112, 100000000000000000000113, 100000000000000000000130);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		100000000000000000000900 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				100000000000000000000A00 /* en Localizable */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin PBXSourcesBuildPhase section */
+		100000000000000000000302 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000101, 100000000000000000000102, 100000000000000000000103,
+				100000000000000000000104, 100000000000000000000105, 100000000000000000000106,
+				100000000000000000000107, 100000000000000000000108, 100000000000000000000109,
+				10000000000000000000010A, 10000000000000000000010B, 10000000000000000000010C,
+				10000000000000000000010D, 10000000000000000000010E, 10000000000000000000010F,
+				100000000000000000000110,
+				100000000000000000000115, 100000000000000000000116, 100000000000000000000117,
+				100000000000000000000118, 100000000000000000000119, 10000000000000000000011A,
+				10000000000000000000011B, 10000000000000000000011C, 10000000000000000000011D,
+				10000000000000000000011E, 10000000000000000000011F, 100000000000000000000120);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		100000000000000000000801 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; SWIFT_VERSION = 5.0;}; name = Debug;};
+		100000000000000000000802 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 5.0;}; name = Release;};
+		100000000000000000000806 /* AppStore */ = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = KEYMIN_APP_STORE; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 5.0;}; name = AppStore;};
+		100000000000000000000804 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {
+			ARCHS = arm64; CODE_SIGN_ENTITLEMENTS = KeyminApp.entitlements; CODE_SIGN_STYLE = Automatic;
+			CURRENT_PROJECT_VERSION = 2026100801; ENABLE_HARDENED_RUNTIME = YES; EXECUTABLE_NAME = KeyminApp; GENERATE_INFOPLIST_FILE = NO;
+			INFOPLIST_FILE = KeyminInfo.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+			MACOSX_DEPLOYMENT_TARGET = 14.0; MARKETING_VERSION = "26.10"; KEYMIN_DISPLAY_NAME = Keymin; PRODUCT_BUNDLE_IDENTIFIER = tools.min.keymin;
+			PRODUCT_NAME = Keymin; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG";
+		}; name = Debug;};
+		100000000000000000000805 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {
+			ARCHS = arm64; CODE_SIGN_ENTITLEMENTS = KeyminApp.entitlements; CODE_SIGN_STYLE = Automatic;
+			CURRENT_PROJECT_VERSION = 2026100801; ENABLE_HARDENED_RUNTIME = YES; EXECUTABLE_NAME = KeyminApp; GENERATE_INFOPLIST_FILE = NO;
+			INFOPLIST_FILE = KeyminInfo.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+			MACOSX_DEPLOYMENT_TARGET = 14.0; MARKETING_VERSION = "26.10"; KEYMIN_DISPLAY_NAME = Keymin; PRODUCT_BUNDLE_IDENTIFIER = tools.min.keymin;
+			PRODUCT_NAME = Keymin;
+		}; name = Release;};
+		100000000000000000000807 /* AppStore */ = {isa = XCBuildConfiguration; buildSettings = {
+			ARCHS = arm64; CODE_SIGN_ENTITLEMENTS = KeyminApp.entitlements; CODE_SIGN_STYLE = Automatic;
+			CURRENT_PROJECT_VERSION = 2026100801; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; ENABLE_HARDENED_RUNTIME = YES; EXECUTABLE_NAME = KeyminApp; GENERATE_INFOPLIST_FILE = NO;
+			INFOPLIST_FILE = KeyminInfo.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+			MACOSX_DEPLOYMENT_TARGET = 14.0; MARKETING_VERSION = "26.10"; KEYMIN_DISPLAY_NAME = Keymin; PRODUCT_BUNDLE_IDENTIFIER = tools.min.keymin;
+			PRODUCT_NAME = Keymin; SWIFT_ACTIVE_COMPILATION_CONDITIONS = KEYMIN_APP_STORE;
+		}; name = AppStore;};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		100000000000000000000800 = {isa = XCConfigurationList; buildConfigurations = (100000000000000000000801, 100000000000000000000802, 100000000000000000000806); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+		100000000000000000000803 = {isa = XCConfigurationList; buildConfigurations = (100000000000000000000804, 100000000000000000000805, 100000000000000000000807); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+/* End XCConfigurationList section */
+	};
+	rootObject = 100000000000000000000600 /* Project object */;
+}
