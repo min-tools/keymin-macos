@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "name": "Debug KeyminApp",
+            "target": "KeyminApp",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug KeyminApp"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "name": "Release KeyminApp",
+            "target": "KeyminApp",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release KeyminApp"
+        }
+    ]
+}
