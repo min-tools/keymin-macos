@@ -302,3 +302,34 @@ private struct BindingCommands: View {
         model.confirmDeleteSelected()
     }
 }
+
+/// The View menu's page toggles, one per content page, on ⌘1 to ⌘6.
+private struct ViewCommands: View {
+    @ObservedObject var model: AppModel
+
+    // pageToggle(title, page, key): A checkmarked menu item that shows the page on ⌘ plus the key.
+    private func pageToggle(_ title: String, _ page: AppModel.Page, key: KeyEquivalent) -> some View {
+        Toggle(localized(title), isOn: Binding(
+            get: { model.page == page },
+            set: { selected in
+                // Clicking the current page must not leave every page unselected.
+                guard selected else { return }
+                // The Source page takes the current document on appearing, unless it holds
+                // unapplied edits, which are kept.
+                model.page = page
+            }
+        ))
+        .keyboardShortcut(key, modifiers: .command)
+        .disabled(!model.hasConfiguration)
+    }
+
+    var body: some View {
+        pageToggle("Bindings", .binding, key: "1")
+        pageToggle("Modes", .modes, key: "2")
+        pageToggle("Blacklist", .blacklist, key: "3")
+        pageToggle("Included Files", .includes, key: "4")
+        pageToggle("After Saving", .afterSave, key: "5")
+        pageToggle("Source", .source, key: "6")
+        Divider()
+    }
+}
