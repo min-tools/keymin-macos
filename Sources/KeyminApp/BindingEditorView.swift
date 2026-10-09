@@ -578,7 +578,7 @@ struct BindingEditorView: View {
                 .keyboardFocusable()
             Spacer()
             Button(localized("Delete Binding")) { model.confirmDeleteSelected() }
-                .buttonStyle(.keymin(.danger))
+                .buttonStyle(.keymin(.danger, shortcut: "⌘⌫"))
                 .keyboardFocusable()
         }
     }

@@ -287,17 +287,18 @@ private struct BindingCommands: View {
             .disabled(!model.hasConfiguration)
     }
 
-    // deleteBindingOrLine(): The Delete Binding item's action. Its ⌘⌫ shortcut reaches the menu
-    // before a text field, so when that key press triggers it while text is being edited, it
-    // deletes to the start of the line, as ⌘⌫ does elsewhere in macOS. Chosen from the menu with
-    // the mouse, or with no text being edited, it asks before removing the selected binding.
+    // deleteBindingOrLine(): Use ⌘⌫ to delete a focused sidebar binding or edit focused text.
+    // Choosing Delete Binding from the menu always asks to delete the selected binding.
     private func deleteBindingOrLine() {
-        // Only the Delete key press itself (key code 0x33) goes to the text. Text fields and the
-        // code editors edit through an NSTextView.
-        if let event = NSApp.currentEvent, event.type == .keyDown, event.keyCode == 0x33,
-           let textView = NSApp.keyWindow?.firstResponder as? NSTextView, textView.isEditable {
-            textView.deleteToBeginningOfLine(nil)
-            return
+        // Menu shortcuts reach this action before the focused text field can handle them.
+        if let event = NSApp.currentEvent, event.type == .keyDown, event.keyCode == 0x33 {
+            if let textView = NSApp.keyWindow?.firstResponder as? NSTextView, textView.isEditable {
+                textView.deleteToBeginningOfLine(nil)
+                return
+            }
+            // Only the sidebar's binding selection may trigger deletion from the keyboard.
+            guard model.page == .binding, NSApp.keyWindow === NSApp.mainWindow,
+                  NSApp.keyWindow?.firstResponder is NSTableView else { return }
         }
         model.confirmDeleteSelected()
     }
