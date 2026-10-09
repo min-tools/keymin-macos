@@ -612,6 +612,8 @@ private struct KeyminProView: View {
             }
         )
         .onPreferenceChange(KeyminProPanelHeightKey.self, perform: resize)
+        // Keep the header in place when a purchase sheet leaves extra window height.
+        .frame(maxHeight: .infinity, alignment: .top)
         .task { await load() }
     }
 
