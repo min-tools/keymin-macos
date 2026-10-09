@@ -78,8 +78,8 @@ for path in ROOT.rglob('*'):
     # This script spells the markers out, so it is the one file allowed to contain them.
     if path.resolve() == Path(__file__).resolve():
         continue
-    # Skip build output, git metadata, and the ignored private directory.
-    if not path.is_file() or {'.git', '.build', 'build', '__pycache__', 'private'} & set(relative.parts):
+    # Skip build and release output, git metadata, and the ignored private directory.
+    if not path.is_file() or {'.git', '.build', 'build', 'dist', '__pycache__', 'private'} & set(relative.parts):
         continue
     # Read only known text files; binaries such as the icon are skipped.
     if path.suffix not in text_suffixes and path.name not in {'.gitignore', 'LICENSE'}:
