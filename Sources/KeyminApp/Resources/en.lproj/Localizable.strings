@@ -288,8 +288,8 @@
 /* Each per-app entry needs an app name. */
 "Each per-app entry needs an app name." = "Each per-app entry needs an app name.";
 
-/* Edit every binding and use the Source page. Pay yearly, or once for lifetime access. */
-"Edit every binding and use the Source page. Pay yearly, or once for lifetime access." = "Edit every binding and use the Source page. Pay yearly, or once for lifetime access.";
+/* Edit skhd shortcuts without writing configuration by hand. */
+"Edit skhd shortcuts without writing configuration by hand." = "Edit skhd shortcuts without writing configuration by hand.";
 
 /* Either */
 "Either" = "Either";

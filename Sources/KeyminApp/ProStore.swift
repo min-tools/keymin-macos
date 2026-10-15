@@ -549,7 +549,7 @@ private struct KeyminProView: View {
                 Text(localized("Keymin Pro"))
                     .font(.system(size: 22, weight: .bold))
                 Text(feature.map { localizedFormat("Unlock %@ and the rest of Keymin Pro.", localized($0.rawValue)) }
-                     ?? localized("Edit every binding and use the Source page. Pay yearly, or once for lifetime access."))
+                     ?? localized("Edit skhd shortcuts without writing configuration by hand."))
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }
