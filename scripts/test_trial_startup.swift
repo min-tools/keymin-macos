@@ -61,6 +61,7 @@ final class TrialPreferences {
         let old = now.addingTimeInterval(-31 * 24 * 60 * 60)
         let startKey = "KeyminAppTrialStartedAt"
         let acceptedKey = "KeyminAppTrialDisclosureAccepted"
+        let testClockMigrationKey = "KeyminTestTrialClockV1"
         let store = KeyminProStore()
         store.hasResolvedEntitlement = true
 
@@ -94,8 +95,36 @@ final class TrialPreferences {
         precondition(store.appTrialStartedAt == now,
                      "Sandbox uses the accepted local clock, not Apple's fixed test date")
 
-        // A returning sandbox user keeps the original clock and receives Free limits after expiry.
+        // A stale local date without an accepted disclosure can remain after development builds.
+        // Accepting the first-launch notice must start the promised trial now.
+        TrialFixture.defaults.values = [startKey: old]
+        let firstSandboxLaunch = KeyminProStore()
+        firstSandboxLaunch.hasResolvedEntitlement = true
+        firstSandboxLaunch.beginAppTrial(now: now)
+        try await waitFor { !firstSandboxLaunch.isTrialWelcomePending }
+        precondition(firstSandboxLaunch.appTrialStartedAt == now)
+        precondition(firstSandboxLaunch.hasFullAccess)
+
+        // Repair a TestFlight install whose transaction looks like production but carries Apple's
+        // fixed sandbox acquisition date.
         TrialFixture.defaults.values = [startKey: old, acceptedKey: true]
+        TrialFixture.transaction.environment = .production
+        TrialFixture.transaction.originalPurchaseDate = Date(timeIntervalSince1970: 1_375_340_400)
+        let migrated = KeyminProStore()
+        migrated.hasResolvedEntitlement = true
+        migrated.beginAppTrial(now: now)
+        try await waitFor { !migrated.isTrialWelcomePending }
+        precondition(migrated.appTrialStartedAt == now && migrated.hasFullAccess)
+        precondition(TrialFixture.defaults.bool(forKey: testClockMigrationKey))
+
+        // A returning sandbox user keeps the original clock and receives Free limits after expiry.
+        TrialFixture.defaults.values = [
+            startKey: old,
+            acceptedKey: true,
+            testClockMigrationKey: true,
+        ]
+        TrialFixture.transaction.environment = .sandbox
+        TrialFixture.transaction.originalPurchaseDate = Date(timeIntervalSince1970: 0)
         let expired = KeyminProStore()
         expired.hasResolvedEntitlement = true
         expired.beginAppTrial(now: now)

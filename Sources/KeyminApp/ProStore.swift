@@ -39,10 +39,17 @@ final class KeyminProStore: ObservableObject {
     /// The open Pro panel; it clears this when its window closes.
     private var panel: NSWindowController?
     private let defaults = UserDefaults.standard
+    /// True when StoreKit installed its sandbox-named receipt in this bundle.
+    private var hasSandboxReceipt: Bool {
+        let receipt = Bundle.main.bundleURL
+            .appendingPathComponent("Contents/_MASReceipt/sandboxReceipt")
+        return FileManager.default.fileExists(atPath: receipt.path)
+    }
 
     // Preferences keys for the local trial clock and the accepted trial disclosure.
     private static let appTrialStartedAtKey = "KeyminAppTrialStartedAt"
     private static let appTrialDisclosureAcceptedKey = "KeyminAppTrialDisclosureAccepted"
+    private static let testTrialClockMigrationKey = "KeyminTestTrialClockV1"
 
     // Only a git-ignored private build input can grant local Pro access; nil means normal rules.
     private var developerOverride: Bool? { KeyminEdition.localProAccess }
@@ -261,25 +268,35 @@ final class KeyminProStore: ObservableObject {
     // beginAppTrial([now = Date()]): Record that the user accepted the trial disclosure and resolve
     // the trial start date.
     func beginAppTrial(now: Date = Date()) {
+        let isFirstAcceptance = !defaults.bool(forKey: Self.appTrialDisclosureAcceptedKey)
         defaults.set(true, forKey: Self.appTrialDisclosureAcceptedKey)
         // App Store builds must verify the transaction environment before choosing a clock.
         if KeyminEdition.isAppStoreBuild {
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                await self.refreshAppTrial(now: now)
+                await self.refreshAppTrial(
+                    now: now,
+                    restartLocalTrial: isFirstAcceptance
+                )
                 self.isTrialWelcomePending = false
             }
         } else {
             // Source builds start or restore the local clock right away.
-            prepareLocalFreeAccess(startTrialIfNeeded: true, now: now)
+            prepareLocalFreeAccess(
+                startTrialIfNeeded: true,
+                restartTrial: isFirstAcceptance,
+                now: now
+            )
             isTrialWelcomePending = false
         }
     }
 
-    // refreshAppTrial([now = Date()]): In App Store builds, resolve the trial from the signed app
-    // transaction: Apple's acquisition date in production, the disclosed local clock in a verified
-    // sandbox. Other builds return at once and leave hasResolvedAppTrial false.
-    private func refreshAppTrial(now: Date = Date()) async {
+    // refreshAppTrial([now = Date()], [restartLocalTrial = false]): Resolve the trial from Apple's
+    // signed production date or the disclosed local clock in a verified test environment.
+    private func refreshAppTrial(
+        now: Date = Date(),
+        restartLocalTrial: Bool = false
+    ) async {
         guard KeyminEdition.isAppStoreBuild else { return }
         defer {
             // Finish startup even on failure. A failed first lookup grants no trial;
@@ -292,8 +309,13 @@ final class KeyminProStore: ObservableObject {
             // A production build must never replace a failed signed lookup with local state.
             return
         }
+        let usesLocalClock = KeyminFreeAccessPolicy.usesLocalTrialClock(
+            transactionIsProduction: transaction.environment == .production,
+            hasSandboxReceipt: hasSandboxReceipt,
+            originalPurchaseDate: transaction.originalPurchaseDate
+        )
         // Production counts from Apple's signed acquisition date, which the user cannot reset.
-        if transaction.environment == .production {
+        if !usesLocalClock {
             let authoritative = KeyminFreeAccessPolicy.authoritativeTrialStartDate(
                 appStoreOriginalPurchaseDate: transaction.originalPurchaseDate,
                 localStartedAt: nil,
@@ -304,22 +326,34 @@ final class KeyminProStore: ObservableObject {
                 applyAppTrialStartDate(authoritative, now: now)
             }
         } else {
-            // Sandbox and Xcode environments use the local clock, started once the disclosure
-            // was accepted.
+            // Sandbox, TestFlight, and Xcode use the local clock after disclosure.
             let accepted = defaults.bool(forKey: Self.appTrialDisclosureAcceptedKey)
+            let didMigrateTestClock = defaults.bool(
+                forKey: Self.testTrialClockMigrationKey
+            )
+            let shouldRestart = accepted && KeyminFreeAccessPolicy.shouldRestartLocalTrial(
+                firstAcceptance: restartLocalTrial,
+                isTestEnvironment: usesLocalClock,
+                didMigrateTestClock: didMigrateTestClock
+            )
             prepareLocalFreeAccess(
                 startTrialIfNeeded: accepted,
+                restartTrial: shouldRestart,
                 now: now,
                 allowAppStoreSandbox: true
             )
+            // Repair an existing test install once without changing production trial state.
+            if accepted {
+                defaults.set(true, forKey: Self.testTrialClockMigrationKey)
+            }
         }
     }
 
-    // prepareLocalFreeAccess([startTrialIfNeeded = false], [now = Date()],
-    // [allowAppStoreSandbox = false]): Restore the local trial clock from preferences, start it
-    // when asked and not yet started, and schedule its expiry.
+    // prepareLocalFreeAccess([startTrialIfNeeded = false], [restartTrial = false], [now = Date()],
+    // [allowAppStoreSandbox = false]): Restore, start, or replace the local trial clock.
     private func prepareLocalFreeAccess(
         startTrialIfNeeded: Bool = false,
+        restartTrial: Bool = false,
         now: Date = Date(),
         allowAppStoreSandbox: Bool = false
     ) {
@@ -328,6 +362,10 @@ final class KeyminProStore: ObservableObject {
         // Private previews force a start date and must not change the real one in preferences.
         if let forced = KeyminEdition.forcedTrialStartedAt {
             appTrialStartedAt = forced
+        } else if restartTrial {
+            // First consent or a one-time test migration starts the promised trial now.
+            appTrialStartedAt = now
+            defaults.set(now, forKey: Self.appTrialStartedAtKey)
         } else if appTrialStartedAt == nil {
             // A running clock is left alone; otherwise preferences decide.
             // A stored date means the trial already began on this Mac.

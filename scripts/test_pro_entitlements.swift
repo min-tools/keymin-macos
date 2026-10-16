@@ -42,6 +42,26 @@ struct EntitlementTests {
         check(KeyminFreeAccessPolicy.trialDaysRemaining(startedAt: trialStart, now: trialStart) == 30,
               "A new trial reports 30 days remaining")
 
+        // TestFlight remains a test environment with production-style receipt metadata.
+        let sandboxPurchaseDate = Date(timeIntervalSince1970: 1_375_340_400)
+        check(KeyminFreeAccessPolicy.usesLocalTrialClock(
+            transactionIsProduction: true, hasSandboxReceipt: true, originalPurchaseDate: now
+        ), "A sandbox receipt identifies TestFlight")
+        check(KeyminFreeAccessPolicy.usesLocalTrialClock(
+            transactionIsProduction: true,
+            hasSandboxReceipt: false,
+            originalPurchaseDate: sandboxPurchaseDate
+        ), "The fixed sandbox date identifies macOS TestFlight")
+        check(!KeyminFreeAccessPolicy.usesLocalTrialClock(
+            transactionIsProduction: true, hasSandboxReceipt: false, originalPurchaseDate: now
+        ), "The production App Store keeps Apple's signed clock")
+        check(KeyminFreeAccessPolicy.shouldRestartLocalTrial(
+            firstAcceptance: false, isTestEnvironment: true, didMigrateTestClock: false
+        ), "An existing test install receives the corrected clock once")
+        check(!KeyminFreeAccessPolicy.shouldRestartLocalTrial(
+            firstAcceptance: false, isTestEnvironment: true, didMigrateTestClock: true
+        ), "A migrated test install keeps its clock")
+
         // Only usesAppStoreDate selects Apple's signed date; it never falls back to local state.
         let localStart = now.addingTimeInterval(24 * 60 * 60)
         check(KeyminFreeAccessPolicy.authoritativeTrialStartDate(
