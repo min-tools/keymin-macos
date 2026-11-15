@@ -111,8 +111,8 @@
 /* App names cannot contain quotation marks. */
 "App names cannot contain quotation marks." = "App names cannot contain quotation marks.";
 
-/* App not found on this Mac */
-"App not found on this Mac" = "App not found on this Mac";
+/* App not found on your Mac */
+"App not found on your Mac" = "App not found on your Mac";
 
 /* Apple key code in hex, such as 0x27 for the quote key. Press Return to apply. */
 "Apple key code in hex, such as 0x27 for the quote key. Press Return to apply." = "Apple key code in hex, such as 0x27 for the quote key. Press Return to apply.";
@@ -426,8 +426,8 @@
 /* Keymin does not include, start, or control skhd. */
 "Keymin does not include, start, or control skhd." = "Keymin does not include, start, or control skhd.";
 
-/* Keymin edits your skhd configuration. Install and start skhd on this Mac to use the shortcuts. */
-"Keymin edits your skhd configuration. Install and start skhd on this Mac to use the shortcuts." = "Keymin edits your skhd configuration. Install and start skhd on this Mac to use the shortcuts.";
+/* Keymin edits your skhd configuration. Install and start skhd on your Mac to use the shortcuts. */
+"Keymin edits your skhd configuration. Install and start skhd on your Mac to use the shortcuts." = "Keymin edits your skhd configuration. Install and start skhd on your Mac to use the shortcuts.";
 
 /* Keymin is fully unlocked for your first 30 days. No subscription starts, and you will not be charged. */
 "Keymin is fully unlocked for your first 30 days. No subscription starts, and you will not be charged." = "Keymin is fully unlocked for your first 30 days. No subscription starts, and you will not be charged.";
@@ -792,8 +792,8 @@
 /* skhd ignores every keypress while one of these apps is in front. Use it for terminals, virtual machines, and remote desktops that need the raw keys. */
 "skhd ignores every keypress while one of these apps is in front. Use it for terminals, virtual machines, and remote desktops that need the raw keys." = "skhd ignores every keypress while one of these apps is in front. Use it for terminals, virtual machines, and remote desktops that need the raw keys.";
 
-/* skhd is running on this Mac */
-"skhd is running on this Mac" = "skhd is running on this Mac";
+/* skhd is running on your Mac */
+"skhd is running on your Mac" = "skhd is running on your Mac";
 
 /* skhd matches the app name as shown in the menu bar, ignoring case. */
 "skhd matches the app name as shown in the menu bar, ignoring case." = "skhd matches the app name as shown in the menu bar, ignoring case.";
@@ -804,8 +804,8 @@
 /* skhd was found, but no running process was detected */
 "skhd was found, but no running process was detected" = "skhd was found, but no running process was detected";
 
-/* skhd was not found on this Mac */
-"skhd was not found on this Mac" = "skhd was not found on this Mac";
+/* skhd was not found on your Mac */
+"skhd was not found on your Mac" = "skhd was not found on your Mac";
 
 /* Source */
 "Source" = "Source";

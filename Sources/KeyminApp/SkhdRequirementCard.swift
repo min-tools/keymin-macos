@@ -128,9 +128,9 @@ struct SkhdRequirementCard: View {
 
     private var headline: String {
         switch presence?.status {
-        case .running: return localized("skhd is running on this Mac")
+        case .running: return localized("skhd is running on your Mac")
         case .installed: return localized("skhd was found, but no running process was detected")
-        case .missing: return localized("skhd was not found on this Mac")
+        case .missing: return localized("skhd was not found on your Mac")
         case nil: return localized("Looking for skhd")
         }
     }

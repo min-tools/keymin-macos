@@ -312,7 +312,7 @@ private struct WelcomeView: View {
     private var detail: String {
         switch model.fileState {
         case .none:
-            return localized("Keymin edits your skhd configuration. Install and start skhd on this Mac to use the shortcuts.")
+            return localized("Keymin edits your skhd configuration. Install and start skhd on your Mac to use the shortcuts.")
         case .needsTargetAccess:
             let target = store.location?.resolvedDisplayPath ?? ""
             return localizedFormat("The chosen file is a link to %@. macOS needs your permission for that file as well before Keymin can read and write it.", target)

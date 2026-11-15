@@ -24,7 +24,7 @@ enum AppResolver {
             guard let url = workspace.urlForApplication(withBundleIdentifier: identifier) else {
                 return ResolvedApp(
                     title: identifier,
-                    subtitle: localized("App not found on this Mac"),
+                    subtitle: localized("App not found on your Mac"),
                     icon: workspace.icon(for: .applicationBundle),
                     isInstalled: false
                 )
