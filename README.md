@@ -23,7 +23,7 @@
   <img src="https://img.shields.io/badge/Apple%20silicon-native-000000?logo=apple&logoColor=white" alt="Apple silicon native">
   <img src="https://img.shields.io/badge/Swift-SwiftUI-F05138?logo=swift&logoColor=white" alt="Swift and SwiftUI">
   <img src="https://img.shields.io/badge/privacy-no%20network%2C%20no%20accounts-6f42c1" alt="No network, no accounts">
-  <img src="https://img.shields.io/badge/Mac%20App%20Store-coming%20soon-0d84ff?logo=apple&logoColor=white" alt="Coming to the Mac App Store">
+  <a href="https://apps.apple.com/app/id6820648683"><img src="https://img.shields.io/badge/Mac%20App%20Store-download-0d84ff?logo=apple&logoColor=white" alt="Download on the Mac App Store"></a>
   <img src="https://img.shields.io/badge/license-PolyForm%20Strict%20%2B%20added%20permissions-blue" alt="PolyForm Strict License 1.0.0 with added permissions for personal modification and contributions">
 </p>
 
